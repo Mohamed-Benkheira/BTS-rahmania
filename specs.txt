@@ -1,0 +1,1056 @@
+# Djezzy Resource Assignment Platform
+## Database Specification and OpenCode Implementation Brief
+
+**Version:** 1.0  
+**Date:** 2026-08-10  
+**Framework:** Laravel 13.x  
+**Admin UI:** Filament 5.x  
+**Database:** PostgreSQL recommended  
+**Scope:** Database foundation before implementing the recommendation engine
+
+---
+
+## 1. Purpose
+
+Build the complete data foundation for a company-wide platform that allows Djezzy to manage employees, organizational structure, skills, certifications, availability, workload, projects, and manual assignments.
+
+The recommendation engine is intentionally postponed. The database must first support a complete manual workflow:
+
+```text
+Create organization structure
+        -> Create employees and profiles
+        -> Define skills and qualifications
+        -> Track availability and workload
+        -> Create projects and requirements
+        -> Manually assign employees or teams
+        -> Track assignment history
+```
+
+The design must support both IT and non-IT projects.
+
+---
+
+## 2. Implementation Strategy
+
+Implement the system as a Laravel monolith with a modular domain structure. Do not create microservices for the first version.
+
+Use:
+
+- Laravel migrations for the database schema.
+- Eloquent models for relationships and queries.
+- Filament resources for administrative CRUD screens.
+- Policies/permissions for authorization.
+- Form Requests or Filament validation for input validation.
+- Factories and seeders for realistic development data.
+- PHPUnit/Pest tests for model relationships and business rules.
+
+The recommendation engine must later be implemented as a separate application service. Do not place scoring logic inside migrations, models, Filament resources, or controllers.
+
+---
+
+## 3. Design Principles
+
+1. Keep authentication separate from employee business data.
+2. Do not store skills, languages, or certifications as comma-separated text.
+3. Use many-to-many pivot tables for employee traits and project requirements.
+4. Use foreign keys and unique constraints wherever appropriate.
+5. Preserve business history; do not hard-delete employees, projects, or assignments casually.
+6. Use soft deletes for entities that may be referenced by historical records.
+7. Keep roles separate from organizational positions.
+8. Allow one project to have one employee, multiple employees, a team, or a department.
+9. Store dates and percentages for availability and workload instead of a single boolean `available` field.
+10. Make the schema useful without the recommendation engine.
+
+Laravel supports Eloquent one-to-many and many-to-many relationships through model relationship methods and pivot tables. [web:40] Laravel also provides soft-delete support through the `SoftDeletes` trait and a nullable `deleted_at` column. [web:47]
+
+---
+
+## 4. Table Groups
+
+### Laravel/framework tables
+
+Keep the normal Laravel tables:
+
+- users
+- password_reset_tokens
+- sessions
+- cache
+- cache_locks
+- jobs
+- job_batches
+- failed_jobs
+- notifications
+
+### Authorization tables
+
+Use a permission package such as Spatie Laravel Permission, or implement equivalent tables:
+
+- roles
+- permissions
+- model_has_roles
+- model_has_permissions
+- role_has_permissions
+
+The implementation agent should not create a second custom role system if Spatie Permission is installed.
+
+### Organization tables
+
+- business_units
+- departments
+- teams
+- positions
+- locations
+
+### Employee tables
+
+- employees
+- skill_categories
+- skills
+- employee_skills
+- certifications
+- employee_certifications
+- languages
+- employee_languages
+- employee_availabilities
+- employee_workloads
+
+### Project and assignment tables
+
+- project_categories
+- projects
+- project_requirements
+- project_required_skills
+- project_required_certifications
+- project_required_languages
+- assignments
+- assignment_members
+- assignment_teams
+- assignment_status_history
+- project_evaluations
+
+### Audit tables
+
+- audit_logs
+
+### Future recommendation tables
+
+These may be created now but must not contain recommendation logic yet:
+
+- recommendation_runs
+- recommendations
+
+---
+
+## 5. Core Table Definitions
+
+The following definitions describe the required columns. All tables should include `created_at` and `updated_at` unless stated otherwise.
+
+### 5.1 users
+
+Use Laravel's default users table and add:
+
+```text
+id                 BIGINT primary key
+name               VARCHAR
+email              VARCHAR unique
+password           VARCHAR
+email_verified_at  TIMESTAMP nullable
+is_active          BOOLEAN default true
+last_login_at      TIMESTAMP nullable
+remember_token     VARCHAR nullable
+created_at         TIMESTAMP
+updated_at         TIMESTAMP
+```
+
+The `users` table is for authentication and access control. It is not the employee profile table.
+
+### 5.2 business_units
+
+```text
+id                 BIGINT primary key
+name               VARCHAR
+code               VARCHAR unique
+description        TEXT nullable
+manager_id         BIGINT nullable -> employees.id
+is_active          BOOLEAN default true
+created_at         TIMESTAMP
+updated_at         TIMESTAMP
+```
+
+Because `manager_id` references `employees`, add this foreign key only after the `employees` table exists, or add it in a later migration.
+
+### 5.3 departments
+
+```text
+id                 BIGINT primary key
+business_unit_id   BIGINT nullable -> business_units.id
+parent_department_id BIGINT nullable -> departments.id
+name               VARCHAR
+code               VARCHAR unique
+description        TEXT nullable
+manager_id         BIGINT nullable -> employees.id
+is_active          BOOLEAN default true
+created_at         TIMESTAMP
+updated_at         TIMESTAMP
+```
+
+`parent_department_id` supports sub-departments.
+
+### 5.4 teams
+
+```text
+id                 BIGINT primary key
+department_id      BIGINT nullable -> departments.id
+name               VARCHAR
+code               VARCHAR unique
+description        TEXT nullable
+team_leader_id     BIGINT nullable -> employees.id
+is_active          BOOLEAN default true
+created_at         TIMESTAMP
+updated_at         TIMESTAMP
+```
+
+### 5.5 positions
+
+```text
+id                 BIGINT primary key
+title              VARCHAR
+code               VARCHAR unique
+level              VARCHAR nullable
+description        TEXT nullable
+is_active          BOOLEAN default true
+created_at         TIMESTAMP
+updated_at         TIMESTAMP
+```
+
+Examples of `level`: intern, junior, mid, senior, lead, manager, director.
+
+### 5.6 locations
+
+```text
+id                 BIGINT primary key
+name               VARCHAR
+city               VARCHAR nullable
+country            VARCHAR nullable
+address            TEXT nullable
+timezone           VARCHAR nullable
+is_active          BOOLEAN default true
+created_at         TIMESTAMP
+updated_at         TIMESTAMP
+```
+
+### 5.7 employees
+
+```text
+id                    BIGINT primary key
+user_id               BIGINT unique -> users.id
+employee_code         VARCHAR unique
+first_name            VARCHAR
+last_name             VARCHAR
+phone                 VARCHAR nullable
+birth_date            DATE nullable
+hire_date             DATE nullable
+employment_type       VARCHAR
+employment_status     VARCHAR
+a business_unit_id    BIGINT nullable -> business_units.id
+department_id         BIGINT nullable -> departments.id
+team_id               BIGINT nullable -> teams.id
+position_id           BIGINT nullable -> positions.id
+primary_location_id   BIGINT nullable -> locations.id
+manager_id            BIGINT nullable -> employees.id
+biography             TEXT nullable
+profile_photo_path    VARCHAR nullable
+created_at            TIMESTAMP
+updated_at            TIMESTAMP
+deleted_at            TIMESTAMP nullable
+```
+
+Correct column name: `business_unit_id` (without the space shown above).
+
+Recommended values:
+
+```text
+employment_type: full_time, part_time, contractor, intern
+employment_status: active, on_leave, suspended, resigned, retired
+```
+
+Use a self-referencing `manager_id` to represent reporting relationships.
+
+### 5.8 skill_categories
+
+```text
+id                 BIGINT primary key
+name               VARCHAR unique
+description        TEXT nullable
+created_at         TIMESTAMP
+updated_at         TIMESTAMP
+```
+
+### 5.9 skills
+
+```text
+id                 BIGINT primary key
+skill_category_id  BIGINT nullable -> skill_categories.id
+name               VARCHAR
+slug               VARCHAR unique
+description        TEXT nullable
+is_active          BOOLEAN default true
+created_at         TIMESTAMP
+updated_at         TIMESTAMP
+deleted_at         TIMESTAMP nullable
+```
+
+Add a unique constraint on `skill_category_id, name` if the product requires skill names to be unique only inside categories.
+
+### 5.10 employee_skills
+
+```text
+id                   BIGINT primary key
+employee_id          BIGINT -> employees.id
+skill_id             BIGINT -> skills.id
+proficiency_level    SMALLINT nullable
+years_experience     DECIMAL(5,2) nullable
+last_used_at         DATE nullable
+verified_at          TIMESTAMP nullable
+verified_by          BIGINT nullable -> users.id
+notes                TEXT nullable
+created_at           TIMESTAMP
+updated_at           TIMESTAMP
+```
+
+Add:
+
+```text
+UNIQUE(employee_id, skill_id)
+CHECK(proficiency_level IS NULL OR proficiency_level BETWEEN 1 AND 5)
+CHECK(years_experience IS NULL OR years_experience >= 0)
+```
+
+### 5.11 certifications
+
+```text
+id                       BIGINT primary key
+name                     VARCHAR
+issuer                   VARCHAR nullable
+slug                     VARCHAR unique
+description              TEXT nullable
+validity_period_months   INTEGER nullable
+is_active                BOOLEAN default true
+created_at               TIMESTAMP
+updated_at               TIMESTAMP
+```
+
+### 5.12 employee_certifications
+
+```text
+id                   BIGINT primary key
+employee_id          BIGINT -> employees.id
+certification_id     BIGINT -> certifications.id
+certificate_number   VARCHAR nullable
+issued_at            DATE nullable
+expires_at           DATE nullable
+document_path        VARCHAR nullable
+verification_status  VARCHAR default 'pending'
+created_at           TIMESTAMP
+updated_at           TIMESTAMP
+```
+
+Recommended values: pending, verified, rejected, expired.
+
+### 5.13 languages
+
+```text
+id                 BIGINT primary key
+name               VARCHAR
+code               VARCHAR unique
+created_at         TIMESTAMP
+updated_at         TIMESTAMP
+```
+
+### 5.14 employee_languages
+
+```text
+id                 BIGINT primary key
+employee_id        BIGINT -> employees.id
+language_id        BIGINT -> languages.id
+speaking_level     VARCHAR nullable
+writing_level      VARCHAR nullable
+reading_level      VARCHAR nullable
+created_at         TIMESTAMP
+updated_at         TIMESTAMP
+```
+
+Add `UNIQUE(employee_id, language_id)`.
+
+### 5.15 employee_availabilities
+
+```text
+id                       BIGINT primary key
+employee_id              BIGINT -> employees.id
+start_date               DATE
+end_date                 DATE
+availability_percentage  DECIMAL(5,2) default 100
+status                   VARCHAR
+reason                   VARCHAR nullable
+notes                    TEXT nullable
+created_at               TIMESTAMP
+updated_at               TIMESTAMP
+```
+
+Constraints:
+
+```text
+CHECK(end_date >= start_date)
+CHECK(availability_percentage BETWEEN 0 AND 100)
+```
+
+Recommended statuses: available, partially_available, unavailable, on_leave.
+
+### 5.16 employee_workloads
+
+```text
+id                  BIGINT primary key
+employee_id         BIGINT -> employees.id
+period_start        DATE
+period_end          DATE
+allocated_percentage DECIMAL(5,2) default 0
+allocated_hours     DECIMAL(8,2) nullable
+source              VARCHAR default 'system'
+created_at          TIMESTAMP
+updated_at          TIMESTAMP
+```
+
+Constraints:
+
+```text
+CHECK(period_end >= period_start)
+CHECK(allocated_percentage BETWEEN 0 AND 100)
+CHECK(allocated_hours IS NULL OR allocated_hours >= 0)
+```
+
+### 5.17 project_categories
+
+```text
+id                 BIGINT primary key
+name               VARCHAR unique
+description        TEXT nullable
+is_active          BOOLEAN default true
+created_at         TIMESTAMP
+updated_at         TIMESTAMP
+```
+
+Examples: IT, Network, Finance, Marketing, HR, Operations, Customer Service, Legal.
+
+### 5.18 projects
+
+```text
+id                       BIGINT primary key
+project_code             VARCHAR unique
+name                     VARCHAR
+description              TEXT nullable
+category_id              BIGINT -> project_categories.id
+requesting_department_id BIGINT nullable -> departments.id
+owning_department_id     BIGINT nullable -> departments.id
+project_manager_id       BIGINT nullable -> employees.id
+created_by               BIGINT -> users.id
+priority                 VARCHAR default 'medium'
+status                   VARCHAR default 'draft'
+confidentiality_level    VARCHAR default 'internal'
+start_date               DATE nullable
+target_end_date          DATE nullable
+estimated_hours          DECIMAL(10,2) nullable
+estimated_budget         DECIMAL(14,2) nullable
+required_members_count   INTEGER default 1
+assignment_mode          VARCHAR default 'multiple_employees'
+created_at               TIMESTAMP
+updated_at               TIMESTAMP
+deleted_at               TIMESTAMP nullable
+```
+
+Recommended values:
+
+```text
+priority: low, medium, high, critical
+status: draft, submitted, under_review, staffing, assigned, in_progress, completed, cancelled, archived
+confidentiality_level: public, internal, confidential, restricted
+assignment_mode: single_employee, multiple_employees, team, department
+```
+
+### 5.19 project_requirements
+
+```text
+id                 BIGINT primary key
+project_id         BIGINT -> projects.id
+title              VARCHAR
+description        TEXT nullable
+requirement_type   VARCHAR
+is_mandatory       BOOLEAN default false
+weight             DECIMAL(5,2) default 0
+created_at         TIMESTAMP
+updated_at         TIMESTAMP
+```
+
+Recommended requirement types: skill, certification, language, experience, position, department, location, availability.
+
+### 5.20 project_required_skills
+
+```text
+id                    BIGINT primary key
+project_id            BIGINT -> projects.id
+skill_id              BIGINT -> skills.id
+minimum_proficiency   SMALLINT nullable
+minimum_years_experience DECIMAL(5,2) nullable
+is_mandatory          BOOLEAN default false
+weight                DECIMAL(5,2) nullable
+created_at            TIMESTAMP
+updated_at            TIMESTAMP
+```
+
+Add `UNIQUE(project_id, skill_id)`.
+
+### 5.21 project_required_certifications
+
+```text
+id                 BIGINT primary key
+project_id         BIGINT -> projects.id
+certification_id   BIGINT -> certifications.id
+is_mandatory       BOOLEAN default false
+created_at         TIMESTAMP
+updated_at         TIMESTAMP
+```
+
+Add `UNIQUE(project_id, certification_id)`.
+
+### 5.22 project_required_languages
+
+```text
+id                 BIGINT primary key
+project_id         BIGINT -> projects.id
+language_id        BIGINT -> languages.id
+minimum_level      VARCHAR nullable
+is_mandatory       BOOLEAN default false
+created_at         TIMESTAMP
+updated_at         TIMESTAMP
+```
+
+Add `UNIQUE(project_id, language_id)`.
+
+### 5.23 assignments
+
+```text
+id                 BIGINT primary key
+project_id         BIGINT -> projects.id
+assigned_by        BIGINT -> users.id
+approved_by        BIGINT nullable -> users.id
+assignment_type    VARCHAR
+status             VARCHAR default 'pending'
+assigned_at        TIMESTAMP nullable
+approved_at        TIMESTAMP nullable
+start_date         DATE nullable
+end_date           DATE nullable
+notes              TEXT nullable
+created_at         TIMESTAMP
+updated_at         TIMESTAMP
+```
+
+Recommended values:
+
+```text
+assignment_type: employee, team, department, mixed
+status: pending, approved, active, completed, rejected, cancelled
+```
+
+A project can have multiple historical assignment records, but only one current approved/active assignment. Enforce this in application logic first; add a PostgreSQL partial unique index later if needed.
+
+### 5.24 assignment_members
+
+```text
+id                    BIGINT primary key
+assignment_id         BIGINT -> assignments.id
+employee_id           BIGINT -> employees.id
+responsibility        VARCHAR nullable
+allocation_percentage DECIMAL(5,2) nullable
+allocated_hours       DECIMAL(10,2) nullable
+joined_at             DATE nullable
+left_at               DATE nullable
+created_at            TIMESTAMP
+updated_at            TIMESTAMP
+```
+
+Add `UNIQUE(assignment_id, employee_id)` and percentage checks.
+
+### 5.25 assignment_teams
+
+```text
+id                    BIGINT primary key
+assignment_id         BIGINT -> assignments.id
+team_id               BIGINT -> teams.id
+responsibility        VARCHAR nullable
+allocation_percentage DECIMAL(5,2) nullable
+created_at            TIMESTAMP
+updated_at            TIMESTAMP
+```
+
+Add `UNIQUE(assignment_id, team_id)`.
+
+### 5.26 assignment_status_history
+
+```text
+id                 BIGINT primary key
+assignment_id      BIGINT -> assignments.id
+old_status         VARCHAR nullable
+new_status         VARCHAR
+changed_by         BIGINT -> users.id
+reason             TEXT nullable
+created_at         TIMESTAMP
+```
+
+### 5.27 project_evaluations
+
+```text
+id                    BIGINT primary key
+project_id            BIGINT -> projects.id
+employee_id           BIGINT nullable -> employees.id
+evaluator_id          BIGINT -> users.id
+rating                SMALLINT
+communication_rating  SMALLINT nullable
+delivery_rating       SMALLINT nullable
+quality_rating        SMALLINT nullable
+comments              TEXT nullable
+evaluated_at          TIMESTAMP
+created_at            TIMESTAMP
+updated_at            TIMESTAMP
+```
+
+Add rating checks between 1 and 5. This table is for future performance-based recommendations and should not be required to create an assignment.
+
+### 5.28 audit_logs
+
+```text
+id               BIGINT primary key
+user_id          BIGINT nullable -> users.id
+action           VARCHAR
+auditable_type   VARCHAR
+auditable_id     BIGINT
+old_values       JSON nullable
+new_values       JSON nullable
+ip_address       VARCHAR nullable
+user_agent       TEXT nullable
+created_at       TIMESTAMP
+```
+
+Use this table for important changes such as employee updates, project assignments, approvals, and permission changes.
+
+---
+
+## 6. Future Recommendation Tables
+
+Create these tables only after the manual assignment flow works, or create them without connecting any scoring logic yet.
+
+### recommendation_runs
+
+```text
+id                 BIGINT primary key
+project_id         BIGINT -> projects.id
+executed_by        BIGINT -> users.id
+algorithm_version  VARCHAR
+criteria_snapshot  JSON
+executed_at        TIMESTAMP
+created_at         TIMESTAMP
+```
+
+### recommendations
+
+```text
+id                    BIGINT primary key
+recommendation_run_id BIGINT -> recommendation_runs.id
+employee_id           BIGINT nullable -> employees.id
+team_id               BIGINT nullable -> teams.id
+department_id         BIGINT nullable -> departments.id
+total_score           DECIMAL(5,2)
+rank                  INTEGER
+eligibility_status    VARCHAR
+explanation           JSON nullable
+status                VARCHAR default 'pending'
+created_at            TIMESTAMP
+updated_at            TIMESTAMP
+```
+
+These tables must support an employee recommendation, team recommendation, or department recommendation. Only one target type should be populated in each row.
+
+---
+
+## 7. Foreign-Key Rules
+
+Use these deletion behaviors:
+
+- Organization parents: `restrict` or `no action` if historical data exists.
+- Optional organization references: `nullOnDelete`.
+- Employee profile linked to user: restrict or soft delete.
+- Project references: restrict or soft delete.
+- Child records such as employee skills: cascade when the employee is permanently deleted.
+- Assignment history: never cascade-delete historical records accidentally.
+
+The implementation agent must review every foreign key instead of applying `cascade` everywhere.
+
+---
+
+## 8. Required Models and Relationships
+
+Create Eloquent models for all domain tables. At minimum, implement:
+
+```text
+User
+BusinessUnit
+Department
+Team
+Position
+Location
+Employee
+SkillCategory
+Skill
+EmployeeSkill
+Certification
+EmployeeCertification
+Language
+EmployeeLanguage
+EmployeeAvailability
+EmployeeWorkload
+ProjectCategory
+Project
+ProjectRequirement
+ProjectRequiredSkill
+ProjectRequiredCertification
+ProjectRequiredLanguage
+Assignment
+AssignmentMember
+AssignmentTeam
+AssignmentStatusHistory
+ProjectEvaluation
+AuditLog
+```
+
+Required relationships include:
+
+```php
+Employee::user(): BelongsTo
+Employee::department(): BelongsTo
+Employee::team(): BelongsTo
+Employee::position(): BelongsTo
+Employee::manager(): BelongsTo
+Employee::subordinates(): HasMany
+Employee::skills(): BelongsToMany
+Employee::certifications(): BelongsToMany
+Employee::languages(): BelongsToMany
+Employee::availabilities(): HasMany
+Employee::workloads(): HasMany
+Employee::assignments(): BelongsToMany
+
+Project::category(): BelongsTo
+Project::requirements(): HasMany
+Project::requiredSkills(): BelongsToMany
+Project::requiredCertifications(): BelongsToMany
+Project::requiredLanguages(): BelongsToMany
+Project::assignments(): HasMany
+Project::projectManager(): BelongsTo
+
+Assignment::project(): BelongsTo
+Assignment::members(): BelongsToMany
+Assignment::teams(): BelongsToMany
+Assignment::statusHistory(): HasMany
+```
+
+Use explicit pivot model classes when the pivot contains meaningful attributes such as proficiency, allocation percentage, or responsibility. Laravel documents many-to-many relationships through `belongsToMany` and pivot tables. [web:40]
+
+---
+
+## 9. Migration Order
+
+Implement migrations in this order:
+
+```text
+1. users and Laravel framework tables
+2. authorization tables
+3. business_units
+4. departments
+5. locations
+6. positions
+7. teams
+8. employees
+9. add circular manager foreign keys
+10. skill_categories
+11. skills
+12. employee_skills
+13. certifications
+14. employee_certifications
+15. languages
+16. employee_languages
+17. employee_availabilities
+18. employee_workloads
+19. project_categories
+20. projects
+21. project_requirements
+22. project_required_skills
+23. project_required_certifications
+24. project_required_languages
+25. assignments
+26. assignment_members
+27. assignment_teams
+28. assignment_status_history
+29. project_evaluations
+30. audit_logs
+31. recommendation_runs
+32. recommendations
+```
+
+For circular foreign keys such as department managers and employee managers, create the tables first, then add the foreign keys in a later migration.
+
+---
+
+## 10. Seed Data Requirements
+
+Create seeders for a realistic demo environment:
+
+- 4 business units.
+- 8 departments.
+- 8 teams.
+- 10 positions.
+- 5 locations.
+- 30 employees.
+- 40 skills.
+- 10 certifications.
+- 8 languages.
+- Availability records for each active employee.
+- Workload records for each active employee.
+- 10 project categories.
+- 10 sample projects.
+- 5 manually assigned projects.
+
+Create one administrator user and one user for each main role.
+
+Do not use fake data that includes real confidential Djezzy employee information.
+
+---
+
+## 11. Validation Rules
+
+Implement at application level and, where possible, database level:
+
+- Employee code must be unique.
+- Project code must be unique.
+- Project target end date must be after or equal to the start date.
+- Availability end date must be after or equal to the start date.
+- Percentages must be between 0 and 100.
+- Proficiency levels must be between 1 and 5.
+- Ratings must be between 1 and 5.
+- A project must have a valid category.
+- A project must not be assigned to an inactive employee.
+- An expired certification must not be treated as valid.
+- A user may have multiple roles.
+- A skill must not be duplicated for the same employee.
+- A required skill must not be duplicated for the same project.
+
+---
+
+## 12. Filament Implementation Scope
+
+Create Filament resources in this order:
+
+```text
+DepartmentResource
+TeamResource
+PositionResource
+LocationResource
+EmployeeResource
+SkillCategoryResource
+SkillResource
+CertificationResource
+LanguageResource
+ProjectCategoryResource
+ProjectResource
+AssignmentResource
+```
+
+The Employee resource should support managing:
+
+- Personal information.
+- Organization assignment.
+- Position.
+- Skills and proficiency.
+- Certifications.
+- Languages.
+- Availability.
+- Workload.
+
+The Project resource should support managing:
+
+- Basic project information.
+- Category and department.
+- Manager.
+- Dates and priority.
+- Requirements.
+- Required skills.
+- Required certifications.
+- Required languages.
+
+Do not create a recommendation button until manual project creation and manual assignment are working.
+
+---
+
+## 13. Implementation Milestones
+
+### Milestone 1: Database foundation
+
+- Create migrations.
+- Run migrations successfully on a clean database.
+- Add indexes, foreign keys, checks, and unique constraints.
+- Create Eloquent models.
+- Create model factories and seeders.
+
+### Milestone 2: Organization and employees
+
+- Implement authentication.
+- Implement roles and permissions.
+- Implement Filament resources for organization and employees.
+- Manage employee skills, certifications, languages, availability, and workload.
+
+### Milestone 3: Projects and manual assignments
+
+- Create project management screens.
+- Add requirements.
+- Manually assign employees and teams.
+- Track assignment status history.
+- Add basic dashboard reports.
+
+### Milestone 4: Recommendation engine
+
+Only after Milestones 1–3 are complete:
+
+- Create recommendation run service.
+- Filter ineligible candidates.
+- Calculate weighted scores.
+- Store recommendation results.
+- Display explanations.
+- Allow manager approval and override.
+
+---
+
+## 14. Acceptance Criteria for the Database Phase
+
+The database phase is complete when:
+
+- A clean Laravel installation can run all migrations successfully.
+- A fresh database can be populated with seed data.
+- Users can be assigned multiple roles.
+- Employees belong to departments, teams, positions, and locations.
+- Employees can have multiple skills, certifications, and languages.
+- Employee availability and workload are stored by date range.
+- Projects can be created for IT and non-IT categories.
+- Projects can have skills, certifications, and language requirements.
+- A project can be manually assigned to employees or teams.
+- Assignment status history is preserved.
+- Important entities have correct foreign keys and indexes.
+- No recommendation score is calculated yet.
+- The application can display an employee profile and project profile in Filament.
+
+---
+
+## 15. Prompt for OpenCode
+
+Use the following instruction as the implementation prompt:
+
+```text
+You are implementing the database foundation for a Laravel 13.x application called Djezzy Resource Assignment Platform.
+
+Read the complete database specification in this file before changing code.
+
+Your task is to implement only the database and domain foundation. Do not implement the recommendation algorithm yet.
+
+Requirements:
+1. Inspect the existing Laravel project before making changes.
+2. Use PostgreSQL-compatible migrations.
+3. Use Laravel conventions and Eloquent models.
+4. Install and configure a role/permission solution if one is not already present. Prefer Spatie Laravel Permission rather than inventing a second authorization architecture.
+5. Implement migrations in dependency order.
+6. Resolve circular foreign keys with separate follow-up migrations.
+7. Add foreign keys, indexes, unique constraints, checks, nullable fields, and soft deletes as described.
+8. Create Eloquent models with casts, fillable/guarded configuration, relationships, and SoftDeletes where required.
+9. Use pivot tables for skills, certifications, languages, project requirements, assignment members, and assignment teams.
+10. Create factories and seeders with safe fictional data only.
+11. Create automated tests for migrations, relationships, important constraints, and seeders.
+12. Do not put recommendation calculations in models, controllers, Filament resources, or migrations.
+13. Do not create React screens yet.
+14. Do not use comma-separated text fields for skills, languages, or certifications.
+15. Do not apply cascade deletes indiscriminately; preserve historical project and assignment data.
+16. Run formatting, migrations, seeders, and tests before finishing.
+17. Report every created/modified file and any decision that differs from this specification.
+
+The implementation must finish with this working flow:
+- Create/login as an administrator.
+- Manage departments, teams, positions, locations, employees, skills, certifications, and languages.
+- Assign traits to employees.
+- Record availability and workload.
+- Create IT and non-IT projects.
+- Add project requirements.
+- Manually assign employees or teams.
+- View assignment history.
+
+Stop before implementing recommendation scoring.
+```
+
+---
+
+## 16. First Command Sequence for the Agent
+
+The implementation agent should begin with:
+
+```bash
+php artisan about
+php artisan migrate:status
+php artisan route:list
+git status
+```
+
+Then it should inspect:
+
+```text
+composer.json
+.env.example
+app/Models
+app/Providers
+database/migrations
+database/seeders
+routes
+```
+
+Before writing code, it should confirm whether authentication, Filament, and a permissions package already exist.
+
+---
+
+## 17. Important Correction
+
+The `employees` table must contain this exact column:
+
+```text
+business_unit_id
+```
+
+Do not create a column with whitespace or any variation of that name. All foreign-key column names should use Laravel's standard snake_case convention.
+
+---
+
+## 18. Final Architecture Decision
+
+The recommended implementation path is:
+
+```text
+Laravel monolith
+    + PostgreSQL
+    + Eloquent
+    + Filament admin panel
+    + Role/permission package
+    + PHPUnit or Pest tests
+    + React later only for custom interfaces
+```
+
+The database and manual assignment workflow are the foundation. The recommendation system should be treated as a separate final module that consumes this foundation and produces explainable recommendations.
