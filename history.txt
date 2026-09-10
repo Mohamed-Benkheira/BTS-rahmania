@@ -3,8 +3,9 @@ PROJECT HISTORY — Djezzy Resource Assignment Platform
 ================================================================================
 This file chronicles everything created for this project from start to now.
 Stack: Laravel 13.24.0 · Filament v5.7.6 · PostgreSQL · Fortify · Spatie
-Permission v8 · Inertia v3 + React. Test suite: 85 tests / 357 assertions.
-Repository: git@github.com:Mohamed-Benkheira/BTS-rahmania.git (commit 684722a).
+Permission v8 · Inertia v3 + React · Playwright (Tier B browser QA). Test
+suite: 93 tests / 376 assertions (PHPUnit) + 5 Playwright e2e specs.
+Repository: git@github.com:Mohamed-Benkheira/BTS-rahmania.git.
 
 --------------------------------------------------------------------------------
 1. PROJECT ORIGIN
@@ -234,6 +235,53 @@ Laravel Pint used for code formatting.
 --------------------------------------------------------------------------------
 13. WHAT WAS INTENTIONALLY LEFT OUT / DEFERRED (REVISED)
 --------------------------------------------------------------------------------
-- Tier B real-browser (Playwright) QA: not performed; tooltip hover behavior is
-  covered indirectly by the dashboard widget tests.
+- Deferred during M4: Tier B real-browser (Playwright) QA. Delivered during M5
+  (see section 14). No deferred items remain outstanding.
+
+--------------------------------------------------------------------------------
+14. MILESTONE 5 — ENGINE HARDENING + CLOSING THE RECOMMENDATION→ASSIGNMENT LOOP
+--------------------------------------------------------------------------------
+- RecommendationService hardened (algorithm 1.1.0):
+  * Expired-certification bug fixed: scoring now uses
+    EmployeeCertification::isCurrentlyValid() (Verified + not expired) in
+    scoreCertificationsFromCollection and in team/department aggregation; an
+    expired cert no longer counts toward a match and can no longer satisfy a
+    mandatory certification requirement (spec §11).
+  * Mandatory-requirement gating: scoreEmployee/Team/Department return null when
+    a mandatory requirement is unmet and are dropped from rankings. New
+    mandatoryRequirementReason() flags missing mandatory skills, proficiency
+    below required minimum, expired/absent mandatory certifications, and
+    language below the required minimum level.
+  * Availability-missing policy: candidates with no current availability record
+    now get DEFAULT_AVAILABILITY_SCORE (0.5) instead of a free default of 1.0.
+  * Audit payload now records eligible_count + excluded_by_mandatory.
+- 6 new test cases (expired cert ignored for scoring and for mandatory gating,
+  mandatory skill + below-minimum gating, neutral availability score, audit
+  exclusion count). Three existing tests updated to non-mandatory requirements
+  so both candidates stay eligible.
+- Closing the loop — assignments:
+  * AssignmentsRelationManager added to ProjectResource (type/status badges,
+    member count, dates, assigner, approved-at, status + type filters).
+  * EditProject "Create Assignment" header action (prefilled start/end dates +
+    notes) creates a pending assignment through AssignmentService and notifies;
+    blocks with a danger toast when the project already has an approved/active
+    assignment.
+  * RecommendationsRelationManager "Create Assignment from Top Match" action:
+    approves the rank-1 pending recommendation, creates the assignment, attaches
+    the employee / team / all active department employees, and audits the
+    approval. Guarded by the same no-current-assignment rule.
+- Tier B Playwright browser QA (previously deferred):
+  * @playwright/test + chromium; playwright.config.ts with webServer
+    (reuseExistingServer), global setup that logs in once and shares the session
+    via storageState, workers=1 for the single-threaded dev server.
+  * tests/e2e/assignments-flow.spec.ts: login reaches admin panel, Assignments
+    manager + Create Assignment flow end-to-end, rankings modal renders in light
+    + dark (screenshots artifacts/rankings-light.png/dark.png), and the
+    Create-Assignment-from-Top-Match action is present.
+  * App\Console\Commands\EnsureE2EProject provides a fixture project without a
+    current assignment so the assignment-creation flow is always testable.
+- Fortify login rate limiter left at 5/min (business behavior); the full rate
+  limit test continues to pass. Login rate-limiting behavior verified in the
+  test suite only.
+- Test suite now 93 tests / 376 assertions (PHPUnit) + 5 Playwright e2e — all green.
 ================================================================================

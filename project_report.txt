@@ -4,7 +4,8 @@ Djezzy Resource Assignment Platform
 ================================================================================
 Presented as part of a BTS Informatics project.
 Stack: Laravel 13.24 / Filament v5.7.6 / PostgreSQL / Fortify / Spatie Permission
-v8 / Inertia v3 + React. Test suite: 69 tests, 315 assertions. Repository:
+v8 / Inertia v3 + React / Playwright. Test suite: 93 PHPUnit tests, 376 assertions,
+plus 5 Playwright Tier B browser e2e specs. Repository:
 git@github.com:Mohamed-Benkheira/BTS-rahmania.git
 
 --------------------------------------------------------------------------------
@@ -186,16 +187,24 @@ Design highlights:
 --------------------------------------------------------------------------------
   * Milestone 1 (database), Milestone 2 (organization & employees), and
     Milestone 3 (projects, assignments, dashboard) are complete.
-  * Milestone 4 (automatic recommendation engine) is intentionally deferred:
-    the recommendation tables exist in the schema but the scoring logic is not
-    implemented. project_evaluations CRUD is likewise not built, pending this
-    future work.
+  * Milestone 4 (automatic recommendation engine) is complete: employee, team,
+    and department modes, eligibility exclusions, mandatory-requirement
+    gating, expired-certification handling (spec §11), a neutral default for
+    missing availability data, and full Filament integration. project_evaluations
+    CRUD is implemented for future performance-based recommendations (spec §5.27).
+  * Recommendation→assignment loop is closed: Assignments relation manager on
+    ProjectResource, a "Create Assignment" header action on EditProject, and
+    "Create Assignment from Top Match" on recommendation runs (approves the
+    rank-1 recommendation and attaches the recommended candidates).
+  * Tier B real-browser QA delivered with Playwright (admin session fixture,
+    light/dark rankings-modal rendering, assignment creation flow).
 
 --------------------------------------------------------------------------------
 8. VERSION CONTROL
 --------------------------------------------------------------------------------
   * Branch: main.
   * Remote: origin -> git@github.com:Mohamed-Benkheira/BTS-rahmania.git
-  * Initial commit 684722a: "feat: Djezzy resource assignment platform
-    foundation" (462 files).
+  * Commits: 684722a "feat: Djezzy resource assignment platform foundation",
+    e030a8a "feat: recommendation engine with employee/team/department modes",
+    plus the M5 hardening/loop-closing commit.
 ================================================================================

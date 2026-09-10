@@ -15,6 +15,10 @@
 .env
 .env.backup
 .env.production
+.test-results
+/playwright-report
+/artifacts/.auth
+/test-results
 .phpactor.json
 .phpunit.result.cache
 Homestead.json

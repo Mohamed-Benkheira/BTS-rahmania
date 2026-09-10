@@ -36,7 +36,10 @@ class RecommendationService
         'fluent' => 5,
     ];
 
-    private const ALGORITHM_VERSION = '1.0.0';
+    private const ALGORITHM_VERSION = '1.1.0';
+
+    /** Neutral score used when a candidate has no current availability record. */
+    private const DEFAULT_AVAILABILITY_SCORE = 0.5;
 
     public function __construct(?AuditService $audit = null)
     {
@@ -62,6 +65,12 @@ class RecommendationService
         ]);
 
         $mode = $project->assignment_mode;
+
+        $eligibleCount = match ($mode) {
+            AssignmentMode::Team => $this->findEligibleTeams($project)->count(),
+            AssignmentMode::Department => $this->findEligibleDepartments($project)->count(),
+            default => $this->findEligibleEmployees($project)->count(),
+        };
 
         $scored = match ($mode) {
             AssignmentMode::Team => $this->scoreTeams($project),
@@ -89,7 +98,14 @@ class RecommendationService
             'recommendation.run',
             $run,
             null,
-            ['project_id' => $project->id, 'assignment_mode' => $mode->value, 'candidates_count' => $scored->count(), 'rankings' => $rank],
+            [
+                'project_id' => $project->id,
+                'assignment_mode' => $mode->value,
+                'candidates_count' => $scored->count(),
+                'eligible_count' => $eligibleCount,
+                'excluded_by_mandatory' => max(0, $eligibleCount - $scored->count()),
+                'rankings' => $rank,
+            ],
             $executedBy,
         );
 
@@ -104,6 +120,7 @@ class RecommendationService
         $candidates = $this->findEligibleEmployees($project);
 
         return $candidates->map(fn (Employee $e) => $this->scoreEmployee($e, $project))
+            ->filter()
             ->sortByDesc('total_score')
             ->values();
     }
@@ -128,9 +145,13 @@ class RecommendationService
             ->get();
     }
 
-    /** @return array{employee_id: int, team_id: null, department_id: null, total_score: float, explanation: array<string, mixed>} */
-    private function scoreEmployee(Employee $employee, Project $project): array
+    /** @return array{employee_id: int, team_id: null, department_id: null, total_score: float, explanation: array<string, mixed>}|null */
+    private function scoreEmployee(Employee $employee, Project $project): ?array
     {
+        if ($this->mandatoryRequirementReason($project, $employee->skills, $employee->certifications, $employee->languages) !== null) {
+            return null;
+        }
+
         $components = $this->scoreCapabilities(
             $employee->skills,
             $employee->certifications,
@@ -157,6 +178,7 @@ class RecommendationService
         $candidates = $this->findEligibleTeams($project);
 
         return $candidates->map(fn (Team $t) => $this->scoreTeam($t, $project))
+            ->filter()
             ->sortByDesc('total_score')
             ->values();
     }
@@ -181,17 +203,23 @@ class RecommendationService
             ->get();
     }
 
-    /** @return array{employee_id: null, team_id: int, department_id: null, total_score: float, explanation: array<string, mixed>} */
-    private function scoreTeam(Team $team, Project $project): array
+    /** @return array{employee_id: null, team_id: int, department_id: null, total_score: float, explanation: array<string, mixed>}|null */
+    private function scoreTeam(Team $team, Project $project): ?array
     {
         $activeEmployees = $team->employees
             ->filter(fn (Employee $e) => $e->employment_status === EmploymentStatus::Active);
 
         $allSkills = $activeEmployees->flatMap(fn ($e) => $e->skills)->unique('id');
-        $allCerts = $activeEmployees->flatMap(fn ($e) => $e->certifications)->unique('id');
+        $allCerts = $activeEmployees
+            ->flatMap(fn ($e) => $e->certifications->filter(fn ($c) => $c->pivot->isCurrentlyValid()))
+            ->unique('id');
         $allLangs = $activeEmployees->flatMap(fn ($e) => $e->languages)->unique('id');
         $allAvailabilities = $activeEmployees->flatMap(fn ($e) => $e->availabilities);
         $allWorkloads = $activeEmployees->flatMap(fn ($e) => $e->workloads);
+
+        if ($this->mandatoryRequirementReason($project, $allSkills, $allCerts, $allLangs) !== null) {
+            return null;
+        }
 
         $components = $this->scoreCapabilities($allSkills, $allCerts, $allLangs, $allAvailabilities, $allWorkloads, $project);
 
@@ -214,6 +242,7 @@ class RecommendationService
         $candidates = $this->findEligibleDepartments($project);
 
         return $candidates->map(fn (Department $d) => $this->scoreDepartment($d, $project))
+            ->filter()
             ->sortByDesc('total_score')
             ->values();
     }
@@ -227,17 +256,23 @@ class RecommendationService
             ->get();
     }
 
-    /** @return array{employee_id: null, team_id: null, department_id: int, total_score: float, explanation: array<string, mixed>} */
-    private function scoreDepartment(Department $department, Project $project): array
+    /** @return array{employee_id: null, team_id: null, department_id: int, total_score: float, explanation: array<string, mixed>}|null */
+    private function scoreDepartment(Department $department, Project $project): ?array
     {
         $activeEmployees = $department->employees
             ->filter(fn (Employee $e) => $e->employment_status === EmploymentStatus::Active);
 
         $allSkills = $activeEmployees->flatMap(fn ($e) => $e->skills)->unique('id');
-        $allCerts = $activeEmployees->flatMap(fn ($e) => $e->certifications)->unique('id');
+        $allCerts = $activeEmployees
+            ->flatMap(fn ($e) => $e->certifications->filter(fn ($c) => $c->pivot->isCurrentlyValid()))
+            ->unique('id');
         $allLangs = $activeEmployees->flatMap(fn ($e) => $e->languages)->unique('id');
         $allAvailabilities = $activeEmployees->flatMap(fn ($e) => $e->availabilities);
         $allWorkloads = $activeEmployees->flatMap(fn ($e) => $e->workloads);
+
+        if ($this->mandatoryRequirementReason($project, $allSkills, $allCerts, $allLangs) !== null) {
+            return null;
+        }
 
         $components = $this->scoreCapabilities($allSkills, $allCerts, $allLangs, $allAvailabilities, $allWorkloads, $project);
 
@@ -320,6 +355,73 @@ class RecommendationService
         ];
     }
 
+    /**
+     * Returns a human-readable reason when a candidate fails a mandatory
+     * requirement, or null when the candidate remains eligible.
+     *
+     * @param  Collection  $skills
+     * @param  Collection  $certs
+     * @param  Collection  $langs
+     */
+    private function mandatoryRequirementReason(Project $project, $skills, $certs, $langs): ?string
+    {
+        $requiredSkills = $project->requiredSkills()->get();
+        $requiredCerts = $project->requiredCertifications()->get();
+        $requiredLangs = $project->requiredLanguages()->get();
+
+        foreach ($requiredSkills as $req) {
+            if (! $req->pivot->is_mandatory) {
+                continue;
+            }
+
+            $match = $skills->firstWhere('id', $req->id);
+
+            if ($match === null) {
+                return "Missing mandatory skill: {$req->name}";
+            }
+
+            $empProf = (int) ($match->pivot->proficiency_level ?? 0);
+            $reqProf = (int) $req->pivot->minimum_proficiency;
+
+            if ($reqProf > 0 && $empProf < $reqProf) {
+                return "Mandatory skill [{$req->name}] proficiency below required ({$empProf}/{$reqProf}).";
+            }
+        }
+
+        $validCertIds = $certs
+            ->filter(fn ($c) => $c->pivot->isCurrentlyValid())
+            ->pluck('id')
+            ->all();
+
+        foreach ($requiredCerts as $req) {
+            if ($req->pivot->is_mandatory && ! in_array($req->id, $validCertIds, true)) {
+                return "Missing mandatory certification: {$req->name}";
+            }
+        }
+
+        $empLangLevels = $langs->mapWithKeys(fn ($l) => [
+            $l->id => max(
+                self::LEVEL_ORDER[$l->pivot->speaking_level?->value] ?? 0,
+                self::LEVEL_ORDER[$l->pivot->writing_level?->value] ?? 0,
+                self::LEVEL_ORDER[$l->pivot->reading_level?->value] ?? 0,
+            ),
+        ]);
+
+        foreach ($requiredLangs as $req) {
+            if (! $req->pivot->is_mandatory) {
+                continue;
+            }
+
+            $requiredLevel = self::LEVEL_ORDER[$req->pivot->minimum_level?->value] ?? 1;
+
+            if (($empLangLevels->get($req->id, 0)) < $requiredLevel) {
+                return "Missing mandatory language: {$req->language->name}";
+            }
+        }
+
+        return null;
+    }
+
     /** @return array{matched: int, total: int, score: float} */
     private function scoreSkillsFromCollection($employeeSkills, Project $project): array
     {
@@ -361,7 +463,10 @@ class RecommendationService
             return ['matched' => 0, 'total' => 0, 'score' => 0.0];
         }
 
-        $empCertIds = $employeeCerts->pluck('id')->all();
+        $empCertIds = $employeeCerts
+            ->filter(fn ($c) => $c->pivot->isCurrentlyValid())
+            ->pluck('id')
+            ->all();
         $matched = 0;
 
         foreach ($required as $req) {
@@ -421,7 +526,7 @@ class RecommendationService
             ->sortByDesc('start_date')
             ->first();
 
-        return $current ? $current->availability_percentage / 100 : 1.0;
+        return $current ? $current->availability_percentage / 100 : self::DEFAULT_AVAILABILITY_SCORE;
     }
 
     private function scoreWorkloadFromCollection($workloads): float

@@ -3,6 +3,8 @@
 namespace Tests\Feature\Domain;
 
 use App\Enums\EmploymentStatus;
+use App\Models\AuditLog;
+use App\Models\Certification;
 use App\Models\Department;
 use App\Models\Employee;
 use App\Models\EmployeeAvailability;
@@ -103,7 +105,7 @@ class RecommendationServiceTest extends TestCase
         $skill = Skill::factory()->create();
         $project->requiredSkills()->attach($skill->id, [
             'minimum_proficiency' => 3,
-            'is_mandatory' => true,
+            'is_mandatory' => false,
             'weight' => 5.0,
         ]);
 
@@ -279,7 +281,7 @@ class RecommendationServiceTest extends TestCase
         ]);
         $project->requiredSkills()->attach($skill->id, [
             'minimum_proficiency' => 3,
-            'is_mandatory' => true,
+            'is_mandatory' => false,
             'weight' => 5.0,
         ]);
 
@@ -355,7 +357,7 @@ class RecommendationServiceTest extends TestCase
         ]);
         $project->requiredSkills()->attach($skill->id, [
             'minimum_proficiency' => 3,
-            'is_mandatory' => true,
+            'is_mandatory' => false,
             'weight' => 5.0,
         ]);
 
@@ -389,5 +391,174 @@ class RecommendationServiceTest extends TestCase
         $run = app(RecommendationService::class)->run($project, $admin);
 
         $this->assertEquals('team', $run->criteria_snapshot['assignment_mode']);
+    }
+
+    public function test_candidate_missing_mandatory_skill_is_excluded(): void
+    {
+        $project = $this->project();
+        $admin = $this->admin();
+
+        $skill = Skill::factory()->create();
+        $project->requiredSkills()->attach($skill->id, [
+            'minimum_proficiency' => 3,
+            'is_mandatory' => true,
+            'weight' => 1.0,
+        ]);
+
+        $skilled = $this->activeEmployee();
+        $skilled->skills()->attach($skill->id, ['proficiency_level' => 5]);
+
+        $unskilled = $this->activeEmployee();
+
+        $run = app(RecommendationService::class)->run($project, $admin);
+
+        $recs = Recommendation::where('recommendation_run_id', $run->id)->get();
+        $this->assertCount(1, $recs);
+        $this->assertEquals($skilled->id, $recs->first()->employee_id);
+    }
+
+    public function test_candidate_below_mandatory_proficiency_is_excluded(): void
+    {
+        $project = $this->project();
+        $admin = $this->admin();
+
+        $skill = Skill::factory()->create();
+        $project->requiredSkills()->attach($skill->id, [
+            'minimum_proficiency' => 4,
+            'is_mandatory' => true,
+            'weight' => 1.0,
+        ]);
+
+        $below = $this->activeEmployee();
+        $below->skills()->attach($skill->id, ['proficiency_level' => 2]);
+
+        $meets = $this->activeEmployee();
+        $meets->skills()->attach($skill->id, ['proficiency_level' => 5]);
+
+        $run = app(RecommendationService::class)->run($project, $admin);
+
+        $recs = Recommendation::where('recommendation_run_id', $run->id)->get();
+        $this->assertCount(1, $recs);
+        $this->assertEquals($meets->id, $recs->first()->employee_id);
+    }
+
+    public function test_expired_certification_is_not_counted(): void
+    {
+        $project = $this->project();
+        $admin = $this->admin();
+
+        $cert = Certification::factory()->create();
+        $project->requiredCertifications()->attach($cert->id, ['is_mandatory' => false]);
+
+        $withValid = $this->activeEmployee();
+        $withValid->certifications()->attach($cert->id, [
+            'verification_status' => 'verified',
+            'expires_at' => now()->addYear(),
+        ]);
+
+        $withExpired = $this->activeEmployee();
+        $withExpired->certifications()->attach($cert->id, [
+            'verification_status' => 'verified',
+            'expires_at' => now()->subDay(),
+        ]);
+
+        $run = app(RecommendationService::class)->run($project, $admin);
+
+        $recs = Recommendation::where('recommendation_run_id', $run->id)
+            ->orderBy('rank')
+            ->get();
+
+        $this->assertEquals($withValid->id, $recs->first()->employee_id);
+        $this->assertEquals(1, $recs->first()->explanation['certifications']['matched']);
+        $this->assertEquals(0, $recs->last()->explanation['certifications']['matched']);
+    }
+
+    public function test_expired_certification_blocks_mandatory_requirement(): void
+    {
+        $project = $this->project();
+        $admin = $this->admin();
+
+        $cert = Certification::factory()->create();
+        $project->requiredCertifications()->attach($cert->id, ['is_mandatory' => true]);
+
+        $withExpired = $this->activeEmployee();
+        $withExpired->certifications()->attach($cert->id, [
+            'verification_status' => 'verified',
+            'expires_at' => now()->subDay(),
+        ]);
+
+        $withValid = $this->activeEmployee();
+        $withValid->certifications()->attach($cert->id, [
+            'verification_status' => 'verified',
+            'expires_at' => null,
+        ]);
+
+        $run = app(RecommendationService::class)->run($project, $admin);
+
+        $recs = Recommendation::where('recommendation_run_id', $run->id)->get();
+        $this->assertCount(1, $recs);
+        $this->assertEquals($withValid->id, $recs->first()->employee_id);
+    }
+
+    public function test_missing_availability_record_uses_neutral_score(): void
+    {
+        $project = $this->project();
+        $admin = $this->admin();
+
+        $documented = $this->activeEmployee();
+        EmployeeAvailability::create([
+            'employee_id' => $documented->id,
+            'start_date' => now()->subMonth(),
+            'end_date' => now()->addMonth(),
+            'availability_percentage' => 100,
+            'status' => 'available',
+        ]);
+
+        $unreported = $this->activeEmployee();
+
+        $run = app(RecommendationService::class)->run($project, $admin);
+
+        $recs = Recommendation::where('recommendation_run_id', $run->id)
+            ->orderBy('rank')
+            ->get();
+
+        $this->assertEquals($documented->id, $recs->first()->employee_id);
+        $unreportedRec = $recs->firstWhere('employee_id', $unreported->id);
+        $this->assertEquals(0.5, $unreportedRec->explanation['availability']);
+
+        $activeWeights = 0.15 + 0.10;
+        $expected = ((0.5 * 0.15) + (1.0 * 0.10)) / $activeWeights;
+        $this->assertEqualsWithDelta($expected, $unreportedRec->total_score, 0.001);
+    }
+
+    public function test_audit_log_records_mandatory_exclusions(): void
+    {
+        $project = $this->project();
+        $admin = $this->admin();
+
+        $skill = Skill::factory()->create();
+        $project->requiredSkills()->attach($skill->id, [
+            'minimum_proficiency' => 3,
+            'is_mandatory' => true,
+            'weight' => 1.0,
+        ]);
+
+        $skilled = $this->activeEmployee();
+        $skilled->skills()->attach($skill->id, ['proficiency_level' => 5]);
+        $this->activeEmployee(); // eligible but excluded by mandatory gate
+
+        $run = app(RecommendationService::class)->run($project, $admin);
+
+        $this->assertDatabaseHas('audit_logs', [
+            'action' => 'recommendation.run',
+            'auditable_type' => RecommendationRun::class,
+            'auditable_id' => $run->id,
+        ]);
+
+        $log = AuditLog::where('action', 'recommendation.run')
+            ->where('auditable_id', $run->id)
+            ->firstOrFail();
+
+        $this->assertEquals(1, $log->new_values['excluded_by_mandatory']);
     }
 }

@@ -3,11 +3,14 @@
 namespace App\Filament\Admin\Resources\Projects\Pages;
 
 use App\Filament\Admin\Resources\Projects\ProjectResource;
+use App\Services\AssignmentService;
 use App\Services\RecommendationService;
 use Filament\Actions\Action;
 use Filament\Actions\DeleteAction;
 use Filament\Actions\ForceDeleteAction;
 use Filament\Actions\RestoreAction;
+use Filament\Forms\Components\DatePicker;
+use Filament\Forms\Components\Textarea;
 use Filament\Notifications\Notification;
 use Filament\Resources\Pages\EditRecord;
 
@@ -18,6 +21,27 @@ class EditProject extends EditRecord
     protected function getHeaderActions(): array
     {
         return [
+            Action::make('create_assignment')
+                ->label('Create Assignment')
+                ->icon('heroicon-o-paper-airplane')
+                ->color('success')
+                ->form([
+                    DatePicker::make('start_date')
+                        ->label('Start date')
+                        ->default(fn () => $this->record->start_date)
+                        ->native(false),
+                    DatePicker::make('end_date')
+                        ->label('End date')
+                        ->default(fn () => $this->record->target_end_date)
+                        ->native(false),
+                    Textarea::make('notes')
+                        ->rows(2)
+                        ->maxLength(1024),
+                ])
+                ->modalHeading(fn () => "Create Assignment for [{$this->record->name}]")
+                ->modalSubmitActionLabel('Create Assignment')
+                ->action(fn (array $data) => $this->createAssignment($data))
+                ->visible(fn () => auth()->user()->can('create assignments')),
             Action::make('recommend')
                 ->label('Recommend')
                 ->icon('heroicon-o-sparkles')
@@ -32,6 +56,33 @@ class EditProject extends EditRecord
             ForceDeleteAction::make(),
             RestoreAction::make(),
         ];
+    }
+
+    private function createAssignment(array $data): void
+    {
+        $service = app(AssignmentService::class)->actor(auth()->user());
+
+        try {
+            $assignment = $service->create($this->record, [
+                'start_date' => $data['start_date'] ?? $this->record->start_date,
+                'end_date' => $data['end_date'] ?? $this->record->target_end_date,
+                'notes' => $data['notes'] ?? null,
+            ]);
+        } catch (\DomainException $e) {
+            Notification::make()
+                ->danger()
+                ->title('Cannot create assignment')
+                ->body($e->getMessage())
+                ->send();
+
+            return;
+        }
+
+        Notification::make()
+            ->success()
+            ->title('Assignment Created')
+            ->body("Assignment #{$assignment->id} for [{$this->record->name}] is pending approval.")
+            ->send();
     }
 
     private function runRecommendation(): void

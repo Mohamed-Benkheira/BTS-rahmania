@@ -4,6 +4,7 @@ namespace Tests\Feature\Domain;
 
 use App\Enums\EmploymentStatus;
 use App\Models\Assignment;
+use App\Models\Department;
 use App\Models\Employee;
 use App\Models\Project;
 use App\Models\User;
@@ -156,5 +157,44 @@ class AssignmentServiceTest extends TestCase
             'user_id' => $admin->id,
             'action' => 'assignment.created',
         ]);
+    }
+
+    public function test_create_from_department_top_match_attaches_active_employees(): void
+    {
+        $admin = $this->admin();
+        $project = $this->project();
+        $department = Department::factory()->create();
+
+        $active = $this->activeEmployee();
+        $onLeave = Employee::factory()->create(['employment_status' => EmploymentStatus::OnLeave]);
+        $department->employees()->saveMany([$active, $onLeave]);
+
+        $service = app(AssignmentService::class)->actor($admin);
+        $assignment = $service->create($project);
+        $memberIds = $department->employees()
+            ->where('employment_status', EmploymentStatus::Active->value)
+            ->pluck('id')
+            ->all();
+
+        $service->assignMembers($assignment, $memberIds);
+
+        $this->assertEquals([$active->id], $assignment->members()->pluck('employees.id')->all());
+        $this->assertCount(1, $assignment->members);
+    }
+
+    public function test_create_uses_project_dates_and_mode_by_default(): void
+    {
+        $project = Project::factory()->create([
+            'created_by' => $this->admin()->id,
+            'assignment_mode' => 'department',
+            'start_date' => now()->addDay()->toDateString(),
+            'target_end_date' => now()->addMonths(2)->toDateString(),
+        ]);
+
+        $assignment = app(AssignmentService::class)->actor($this->admin())->create($project);
+
+        $this->assertEquals('department', $assignment->assignment_type->value);
+        $this->assertEquals($project->start_date->toDateString(), $assignment->start_date->toDateString());
+        $this->assertEquals($project->target_end_date->toDateString(), $assignment->end_date->toDateString());
     }
 }
