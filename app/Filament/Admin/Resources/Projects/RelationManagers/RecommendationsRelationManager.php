@@ -54,7 +54,16 @@ class RecommendationsRelationManager extends RelationManager
                 TextColumn::make('recommendations_count')
                     ->label('Candidates')
                     ->counts('recommendations')
+                    ->badge()
+                    ->color(fn ($record) => $record->recommendations()->count() === 0 ? Color::Red : Color::Green)
                     ->sortable(),
+                TextColumn::make('blockers')
+                    ->label('Blockers')
+                    ->formatStateUsing(fn ($state) => is_array($state) && $state !== [] ? count($state).' unresolved mandatory requirement(s)' : null)
+                    ->badge()
+                    ->color(fn ($state) => is_array($state) && $state !== [] ? Color::Red : Color::Gray)
+                    ->tooltip(fn ($record) => $record->blockers !== null ? implode(PHP_EOL, $record->blockers) : '')
+                    ->placeholder('—'),
                 TextColumn::make('executed_at')
                     ->label('Executed')
                     ->dateTime()
@@ -72,6 +81,7 @@ class RecommendationsRelationManager extends RelationManager
                             ->with(['employee', 'team', 'department'])
                             ->orderBy('rank')
                             ->get(),
+                        'blockers' => $record->blockers,
                     ]))
                     ->modalSubmitAction(false),
                 Action::make('create_assignment_from_top_match')

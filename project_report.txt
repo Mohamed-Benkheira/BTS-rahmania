@@ -4,7 +4,7 @@ Djezzy Resource Assignment Platform
 ================================================================================
 Presented as part of a BTS Informatics project.
 Stack: Laravel 13.24 / Filament v5.7.6 / PostgreSQL / Fortify / Spatie Permission
-v8 / Inertia v3 + React / Playwright. Test suite: 93 PHPUnit tests, 376 assertions,
+v8 / Inertia v3 + React / Playwright. Test suite: 96 PHPUnit tests, 406 assertions,
 plus 5 Playwright Tier B browser e2e specs. Repository:
 git@github.com:Mohamed-Benkheira/BTS-rahmania.git
 

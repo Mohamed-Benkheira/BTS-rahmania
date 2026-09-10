@@ -56,14 +56,6 @@ class RecommendationService
 
     public function run(Project $project, User $executedBy): RecommendationRun
     {
-        $run = RecommendationRun::create([
-            'project_id' => $project->id,
-            'executed_by' => $executedBy->id,
-            'algorithm_version' => self::ALGORITHM_VERSION,
-            'criteria_snapshot' => $this->buildCriteriaSnapshot($project),
-            'executed_at' => now(),
-        ]);
-
         $mode = $project->assignment_mode;
 
         $eligibleCount = match ($mode) {
@@ -77,6 +69,17 @@ class RecommendationService
             AssignmentMode::Department => $this->scoreDepartments($project),
             default => $this->scoreEmployees($project),
         };
+
+        $blockers = $scored->isEmpty() ? $this->mandatoryBlockers($project) : null;
+
+        $run = RecommendationRun::create([
+            'project_id' => $project->id,
+            'executed_by' => $executedBy->id,
+            'algorithm_version' => self::ALGORITHM_VERSION,
+            'criteria_snapshot' => $this->buildCriteriaSnapshot($project),
+            'blockers' => $blockers,
+            'executed_at' => now(),
+        ]);
 
         $rank = 0;
         foreach ($scored as $item) {
@@ -104,6 +107,7 @@ class RecommendationService
                 'candidates_count' => $scored->count(),
                 'eligible_count' => $eligibleCount,
                 'excluded_by_mandatory' => max(0, $eligibleCount - $scored->count()),
+                'blockers' => $blockers,
                 'rankings' => $rank,
             ],
             $executedBy,
@@ -420,6 +424,39 @@ class RecommendationService
         }
 
         return null;
+    }
+
+    /**
+     * Collects human-readable reasons explaining why no candidate could meet
+     * the project's mandatory requirements. Computed across the active
+     * workforce, so it is independent of the run's assignment mode.
+     *
+     * @return array<int, string>
+     */
+    private function mandatoryBlockers(Project $project): array
+    {
+        $employees = Employee::query()
+            ->where('employment_status', EmploymentStatus::Active->value)
+            ->with(['skills', 'certifications', 'languages'])
+            ->get();
+
+        $reasons = [];
+
+        foreach ($employees as $employee) {
+            $reason = $this->mandatoryRequirementReason($project, $employee->skills, $employee->certifications, $employee->languages);
+
+            if ($reason !== null) {
+                $reasons[$reason] = true;
+            }
+        }
+
+        $blockers = array_keys($reasons);
+
+        if ($blockers === [] && $employees->isNotEmpty()) {
+            return ['No single candidate satisfies every mandatory requirement combined.'];
+        }
+
+        return array_slice($blockers, 0, 8);
     }
 
     /** @return array{matched: int, total: int, score: float} */

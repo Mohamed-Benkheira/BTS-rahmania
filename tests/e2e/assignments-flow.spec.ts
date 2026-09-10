@@ -75,7 +75,7 @@ test.describe('recommendations modal rendering', () => {
         await expect(list).toBeVisible({ timeout: 10_000 });
         await expect(list.locator('> div').first()).toBeVisible();
 
-        await expect(list).toContainText(/match/i);
+        await expect(list).toContainText(/match|mandatory requirement/i);
 
         await page.screenshot({
             fullPage: false,

@@ -284,4 +284,26 @@ Laravel Pint used for code formatting.
   limit test continues to pass. Login rate-limiting behavior verified in the
   test suite only.
 - Test suite now 93 tests / 376 assertions (PHPUnit) + 5 Playwright e2e — all green.
+- Zero-candidate diagnosis & demo-data guarantee:
+  * Reported behavior: the engine returned 0 candidates for every project
+    because strict mandatory gating correctly excluded everyone while the
+    seeded requirements were unsatisfiable (e.g. Docker @5 on Mobile App
+    Redesign, Terraform @3 on 5G Core Rollout).
+  * Recommendation runs now record mandatory "blockers" (recommendation_runs.
+    blockers, JSON): when a run yields no candidates, RecommendationService
+    computes the distinct unmet mandatory requirements across the active
+    workforce and stores them on the run + audit payload.
+  * EditProject "Recommend" now surfaces a danger+persistent notification
+    listing each unresolved requirement instead of a bare "0 recommendations".
+  * RecommendationsRelationManager gained a red "Blockers" column (count badge
+    + tooltip with the reasons) and the View Rankings modal shows the blocker
+    list in its empty state.
+  * Seed data made deterministically satisfiable: every employee gets all
+    skills at proficiency >= 4, every core certification verified, and every
+    language (Arabic native, all others advanced); required skill minimum
+    proficiency is capped at 4; core cert + full language pools are used as
+    requirement sources. A regression test (SeedDataProducesRecommendationsTest)
+    seeds the full database and asserts every project yields >= 1 candidate
+    with no blockers.
+- Test suite now 96 tests / 406 assertions (PHPUnit) + 5 Playwright e2e — all green.
 ================================================================================

@@ -82,14 +82,19 @@ class ProjectSeeder extends Seeder
         }
 
         $skills = Skill::pluck('id')->all();
-        $certifications = Certification::pluck('id')->all();
+        $coreCertificationSlugs = [
+            'cisco-ccna', 'cisco-ccnp', 'aws-solutions-architect', 'azure-administrator',
+            'certified-information-systems-security-professional', 'certified-scrum-master',
+            'pmp', 'oracle-certified-professional', 'google-cloud-professional', 'red-hat-certified-engineer',
+        ];
+        $certifications = Certification::whereIn('slug', $coreCertificationSlugs)->pluck('id')->all();
         $languages = Language::pluck('id')->all();
 
         foreach ($created as $project) {
             foreach (fake()->randomElements($skills, fake()->numberBetween(2, 4)) as $skillId) {
                 $project->requiredSkills()->attach($skillId, [
-                    'minimum_proficiency' => fake()->numberBetween(3, 5),
-                    'minimum_years_experience' => fake()->randomFloat(1, 1, 6),
+                    'minimum_proficiency' => fake()->numberBetween(3, 4),
+                    'minimum_years_experience' => fake()->randomFloat(1, 2, 6),
                     'is_mandatory' => fake()->boolean(60),
                     'weight' => fake()->randomFloat(2, 0.5, 5),
                 ]);

@@ -561,4 +561,47 @@ class RecommendationServiceTest extends TestCase
 
         $this->assertEquals(1, $log->new_values['excluded_by_mandatory']);
     }
+
+    public function test_run_records_blockers_when_no_candidate_meets_mandatory_requirements(): void
+    {
+        $project = $this->project();
+        $admin = $this->admin();
+
+        $skill = Skill::factory()->create(['name' => 'Docker']);
+        $project->requiredSkills()->attach($skill->id, [
+            'minimum_proficiency' => 5,
+            'is_mandatory' => true,
+            'weight' => 1.0,
+        ]);
+
+        $below = $this->activeEmployee();
+        $below->skills()->attach($skill->id, ['proficiency_level' => 3]);
+        $this->activeEmployee();
+
+        $run = app(RecommendationService::class)->run($project, $admin);
+
+        $this->assertCount(0, $run->recommendations);
+        $this->assertIsArray($run->blockers);
+        $this->assertNotCount(0, $run->blockers);
+        $this->assertStringContainsString('Docker', implode(' ', $run->blockers));
+
+        $log = AuditLog::where('action', 'recommendation.run')
+            ->where('auditable_id', $run->id)
+            ->firstOrFail();
+        $this->assertEquals($run->blockers, $log->new_values['blockers']);
+        $this->assertEquals(2, $log->new_values['excluded_by_mandatory']);
+    }
+
+    public function test_run_has_no_blockers_when_candidates_meet_requirements(): void
+    {
+        $project = $this->project();
+        $admin = $this->admin();
+
+        $this->activeEmployee();
+
+        $run = app(RecommendationService::class)->run($project, $admin);
+
+        $this->assertNull($run->blockers);
+        $this->assertNotNull($run->recommendations);
+    }
 }

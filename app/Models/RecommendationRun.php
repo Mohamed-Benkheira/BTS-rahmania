@@ -14,15 +14,17 @@ use Illuminate\Support\Carbon;
  * @property int $executed_by
  * @property string $algorithm_version
  * @property array<string, mixed> $criteria_snapshot
+ * @property array<int, string>|null $blockers
  * @property Carbon $executed_at
  */
-#[Fillable(['project_id', 'executed_by', 'algorithm_version', 'criteria_snapshot', 'executed_at'])]
+#[Fillable(['project_id', 'executed_by', 'algorithm_version', 'criteria_snapshot', 'blockers', 'executed_at'])]
 class RecommendationRun extends Model
 {
     protected function casts(): array
     {
         return [
             'criteria_snapshot' => 'array',
+            'blockers' => 'array',
             'executed_at' => 'datetime',
         ];
     }

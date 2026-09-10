@@ -208,7 +208,16 @@
     @empty
         <div style="border: 1px dashed var(--rv-border); border-radius: 14px; background: var(--rv-soft); padding: 36px 20px; text-align: center;">
             <div style="font-size: 13px; font-weight: 600; color: var(--rv-text);">No recommendations available</div>
-            <div style="font-size: 11px; color: var(--rv-dim); margin-top: 4px;">Run the recommendation engine to generate candidate matches.</div>
+            @if (! empty($blockers))
+                <div style="font-size: 11px; color: var(--rv-muted); margin-top: 8px; text-align: left; display: inline-block;">
+                    <div style="font-weight: 600; margin-bottom: 4px;">No candidate met the mandatory requirements:</div>
+                    @foreach ($blockers as $blocker)
+                        <div style="padding-left: 10px;">• {{ $blocker }}</div>
+                    @endforeach
+                </div>
+            @else
+                <div style="font-size: 11px; color: var(--rv-dim); margin-top: 4px;">Run the recommendation engine to generate candidate matches.</div>
+            @endif
         </div>
     @endforelse
 </div>

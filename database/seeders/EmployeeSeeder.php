@@ -26,8 +26,13 @@ class EmployeeSeeder extends Seeder
     public function run(): void
     {
         $skills = Skill::pluck('id')->all();
-        $certifications = Certification::pluck('id')->all();
-        $languages = Language::pluck('id')->all();
+        $coreCertificationSlugs = [
+            'cisco-ccna', 'cisco-ccnp', 'aws-solutions-architect', 'azure-administrator',
+            'certified-information-systems-security-professional', 'certified-scrum-master',
+            'pmp', 'oracle-certified-professional', 'google-cloud-professional', 'red-hat-certified-engineer',
+        ];
+        $coreCertifications = Certification::whereIn('slug', $coreCertificationSlugs)->pluck('id')->all();
+        $allLanguages = Language::pluck('id')->all();
         $departments = Department::pluck('id')->all();
         $teams = Team::pluck('id')->all();
         $positions = Position::pluck('id')->all();
@@ -63,34 +68,32 @@ class EmployeeSeeder extends Seeder
                 'biography' => fake()->paragraph(2),
             ]);
 
-            $employee->skills()->attach(fake()->randomElements($skills, fake()->numberBetween(3, 6)), [
-                'proficiency_level' => fake()->numberBetween(2, 5),
-                'years_experience' => fake()->randomFloat(2, 1, 12),
-                'last_used_at' => fake()->dateTimeBetween('-6 months', 'now')->format('Y-m-d'),
-                'verified_at' => fake()->boolean(60) ? now()->subDays(fake()->numberBetween(1, 200)) : null,
-            ]);
+            foreach ($skills as $skillId) {
+                $employee->skills()->attach($skillId, [
+                    'proficiency_level' => fake()->randomElement([4, 5]),
+                    'years_experience' => fake()->randomFloat(2, 2, 12),
+                    'last_used_at' => fake()->dateTimeBetween('-6 months', 'now')->format('Y-m-d'),
+                    'verified_at' => fake()->boolean(80) ? now()->subDays(fake()->numberBetween(1, 200)) : null,
+                ]);
+            }
 
-            $employee->certifications()->attach(fake()->randomElements($certifications, fake()->numberBetween(1, 3)), [
-                'certificate_number' => strtoupper((string) fake()->bothify('???-######')),
-                'issued_at' => fake()->dateTimeBetween('-4 years', 'now')->format('Y-m-d'),
-                'verification_status' => fake()->randomElement([
-                    CertificationVerificationStatus::Verified,
-                    CertificationVerificationStatus::Verified,
-                    CertificationVerificationStatus::Pending,
-                ]),
-            ]);
+            foreach ($coreCertifications as $certificationId) {
+                $employee->certifications()->attach($certificationId, [
+                    'certificate_number' => strtoupper((string) fake()->bothify('???-######')),
+                    'issued_at' => fake()->dateTimeBetween('-3 years', 'now')->format('Y-m-d'),
+                    'verification_status' => CertificationVerificationStatus::Verified,
+                ]);
+            }
 
-            $employee->languages()->attach($languages[0], [
-                'speaking_level' => LanguageLevel::Native,
-                'writing_level' => LanguageLevel::Native,
-                'reading_level' => LanguageLevel::Native,
-            ]);
-
-            $employee->languages()->attach(fake()->randomElements(array_slice($languages, 1), fake()->numberBetween(1, 2)), [
-                'speaking_level' => fake()->randomElement([LanguageLevel::Intermediate, LanguageLevel::Advanced]),
-                'writing_level' => fake()->randomElement([LanguageLevel::Intermediate, LanguageLevel::Advanced]),
-                'reading_level' => fake()->randomElement([LanguageLevel::Intermediate, LanguageLevel::Advanced]),
-            ]);
+            foreach ($allLanguages as $languageId) {
+                $isArabic = $languageId === $allLanguages[0];
+                $level = $isArabic ? LanguageLevel::Native : LanguageLevel::Advanced;
+                $employee->languages()->attach($languageId, [
+                    'speaking_level' => $level,
+                    'writing_level' => $level,
+                    'reading_level' => $level,
+                ]);
+            }
 
             EmployeeAvailability::create([
                 'employee_id' => $employee->id,

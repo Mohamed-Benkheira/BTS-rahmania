@@ -114,6 +114,19 @@ class EditProject extends EditRecord
             $message .= " Top pick: {$targetName} (score: ".number_format($top->total_score * 100, 1).'%).';
         }
 
+        if ($count === 0) {
+            $blockers = $run->blockers ?? ['No candidate meets every mandatory requirement.'];
+
+            $notification = Notification::make()
+                ->title('No Candidates Found')
+                ->body('No candidate met the mandatory requirements for this project.'.PHP_EOL.'• '.implode(PHP_EOL.'• ', $blockers))
+                ->danger()
+                ->persistent()
+                ->send();
+
+            return;
+        }
+
         Notification::make()
             ->title('Recommendations Generated')
             ->body($message)
