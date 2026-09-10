@@ -14,6 +14,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasManyThrough;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Carbon;
 
@@ -150,6 +151,18 @@ class Project extends Model
     public function evaluations(): HasMany
     {
         return $this->hasMany(ProjectEvaluation::class);
+    }
+
+    /** @return HasMany<RecommendationRun, $this> */
+    public function recommendationRuns(): HasMany
+    {
+        return $this->hasMany(RecommendationRun::class);
+    }
+
+    /** @return HasManyThrough<Recommendation, RecommendationRun> */
+    public function recommendations(): HasManyThrough
+    {
+        return $this->hasManyThrough(Recommendation::class, RecommendationRun::class, 'project_id', 'recommendation_run_id');
     }
 
     public function activeAssignment(): ?Assignment

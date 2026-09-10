@@ -60,6 +60,12 @@ class RolesAndPermissionsSeeder extends Seeder
             'delete assignments',
             'approve assignments',
             'view recommendations',
+            'run recommendations',
+            'approve recommendations',
+            'view project evaluations',
+            'create project evaluations',
+            'update project evaluations',
+            'delete project evaluations',
             'view users',
             'create users',
             'update users',
@@ -90,7 +96,8 @@ class RolesAndPermissionsSeeder extends Seeder
             'view languages', 'create languages', 'update languages',
             'view projects', 'create projects', 'update projects',
             'view assignments', 'create assignments', 'update assignments', 'approve assignments',
-            'view recommendations',
+            'view recommendations', 'run recommendations', 'approve recommendations',
+            'view project evaluations', 'create project evaluations', 'update project evaluations',
             'view users', 'create users', 'update users',
             'view roles', 'update roles',
         ]);
@@ -101,6 +108,7 @@ class RolesAndPermissionsSeeder extends Seeder
             'view certifications', 'update certifications',
             'view languages', 'update languages',
             'view projects',
+            'view project evaluations', 'create project evaluations',
         ]);
 
         $resourceManager->syncPermissions([
@@ -116,7 +124,8 @@ class RolesAndPermissionsSeeder extends Seeder
             'view employees',
             'view projects', 'create projects', 'update projects',
             'view assignments', 'create assignments', 'update assignments', 'approve assignments',
-            'view recommendations',
+            'view recommendations', 'run recommendations', 'approve recommendations',
+            'view project evaluations', 'create project evaluations',
         ]);
     }
 }

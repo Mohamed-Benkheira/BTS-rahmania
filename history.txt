@@ -1,0 +1,239 @@
+================================================================================
+PROJECT HISTORY — Djezzy Resource Assignment Platform
+================================================================================
+This file chronicles everything created for this project from start to now.
+Stack: Laravel 13.24.0 · Filament v5.7.6 · PostgreSQL · Fortify · Spatie
+Permission v8 · Inertia v3 + React. Test suite: 85 tests / 357 assertions.
+Repository: git@github.com:Mohamed-Benkheira/BTS-rahmania.git (commit 684722a).
+
+--------------------------------------------------------------------------------
+1. PROJECT ORIGIN
+--------------------------------------------------------------------------------
+The project is a resource assignment platform built against specs.txt. It lets
+Djezzy manage employees, the organizational structure, skills, certifications,
+languages, availability, workload, projects, and manual project assignments,
+exposed through a Filament admin panel.
+
+--------------------------------------------------------------------------------
+2. MILESTONE 1 — DATABASE FOUNDATION
+--------------------------------------------------------------------------------
+- 39 database migrations covering the full spec:
+  * Framework + auth tables (users, password reset tokens, sessions, jobs,
+    cache, Fortify 2FA/passkeys).
+  * Spatie RBAC (roles, permissions, model_has_roles, model_has_permissions).
+  * Organization: business_units, departments, teams, positions, locations.
+  * Employee domain: employees, employee_skills, employee_certifications,
+    employee_languages, availability, workload, and ~30 employee tables total.
+  * Projects: project_categories, projects, project_requirements,
+    project_required_skills/certifications/languages.
+  * Assignments: assignments, assignment_members, assignment_teams,
+    assignment_status_history.
+  * audit_logs.
+  * Dormant recommendation tables (recommendations, recommendation_details,
+    recommendation_eligibility, project_evaluations) — schema only, no logic.
+- Circular foreign keys between department/team/employee managers resolved in a
+  follow-up migration (managers nullable + FK added after tables exist).
+- Database-level CHECK constraints: proficiency 1-5, percentages 0-100,
+  start-before-end dates, ratings 1-5.
+- 26+ unique constraints to prevent duplicates.
+- Soft deletes on Employee, Project, and Skill.
+- Data integrity guarantees added later (see section 7):
+  * Partial unique index `assignments_single_current` — at most one
+    approved/active assignment per project; historical records still allowed.
+  * `employees.user_id` FK uses restrictOnDelete — a linked user account cannot
+    be deleted while an employee profile references it.
+- 30 Eloquent models with all spec'd relationships: employee skills/certs/
+  languages, availabilities, workloads, assignments; project requirements +
+  required skills/certs/languages; assignment members/teams/status history.
+- 18 model factories + 6 seeders producing realistic fictional data:
+  4 business units, 9 departments, 8 teams, 12 positions, 5 locations,
+  30 employees, 40 skills, 10 certifications, 8 languages, 10 project
+  categories, 10 projects (5 of which are manually assigned).
+
+--------------------------------------------------------------------------------
+3. MILESTONE 2 — ORGANIZATION & EMPLOYEES
+--------------------------------------------------------------------------------
+- Laravel Fortify authentication with 2FA and passkey support.
+- Spatie RBAC: 6 roles, 54 permissions (see section 6).
+- Filament resources created:
+  Business Units, Departments, Teams, Positions, Locations, Employees,
+  Skill Categories, Skills, Certifications, Languages.
+- Employee profile manages: personal info, department/team/position, manager,
+  skills + proficiency, certifications, languages, availability, and workload —
+  all through relation managers.
+- Employment status, employment type, availability status enums enforced.
+
+--------------------------------------------------------------------------------
+4. MILESTONE 3 — PROJECTS, MANUAL ASSIGNMENTS, DASHBOARD
+--------------------------------------------------------------------------------
+- Filament resources created:
+  Project Categories, Projects, Assignments.
+- Projects support IT and non-IT categories, priority, status, dates, budget,
+  requirements + required skills/certifications/languages via relation managers.
+- AssignmentService enforces business rules:
+  * No double current assignment (an employee cannot be active on two projects).
+  * Only active employees can be assigned.
+  * Valid status transitions: pending -> approved -> active -> completed,
+    plus rejected/cancelled.
+  * Assignments can target employees, teams, or mixed modes.
+- Assignment status history preserved in assignment_status_history.
+- Custom dashboard page (app/Filament/Admin/Pages/Dashboard.php):
+  * 4 stat cards with tooltips + sparklines.
+  * 3 charts: employees by department, projects by status,
+    workload vs. availability.
+  * 4 tables: expiring certifications, over-allocated employees,
+    projects needing staffing, recent activity — all with tooltips.
+- Sidebar reorganized into 4 navigation groups: Organization, Employees,
+  Projects, Access Control.
+
+--------------------------------------------------------------------------------
+5. AUDIT LOGGING
+--------------------------------------------------------------------------------
+- AuditService records the full assignment lifecycle (created, status changed,
+  approved, rejected, completed, cancelled).
+- Model observers created: EmployeeObserver, ProjectObserver, and a shared
+  AuditsChanges concern. They log create/update/delete with old/new values.
+- Role/permission changes and user-role changes are logged from the admin UI.
+- All write operations including database seeding are audited.
+- The dashboard Recent Activity widget displays the audit stream live.
+
+--------------------------------------------------------------------------------
+6. ACCESS CONTROL (NEW RESOURCES)
+--------------------------------------------------------------------------------
+- UserResource (app/Filament/Admin/Resources/Users):
+  * Create/edit users, password rules, active toggle.
+  * Role multi-select; is_active flag controls panel access.
+  * Optional link to an employee profile.
+  * Audits user.created and user.roles.updated.
+- RoleResource (app/Filament/Admin/Resources/Roles):
+  * Role/permission CRUD with user + permission counts.
+  * Audits role.updated.
+- UserPolicy and RolePolicy registered.
+- 8 new permissions added to the seeder (54 total).
+- Seeders create one account per role and link them to matching employee
+  profiles (e.g. HR account -> DEPT-HR employee).
+
+--------------------------------------------------------------------------------
+7. QA, INTEGRITY FIXES & VERIFICATION
+--------------------------------------------------------------------------------
+- DB integrity migrations (described in section 2) added and verified with a
+  dedicated DataIntegrityTest (partial unique index throws on double current,
+  historical OK, restrict FK throws, unlinked user deletable, observer audits).
+- migrate:fresh --seed runs clean:
+  6 users, 30 employees, 4 linked to user accounts, 74 audit rows,
+  6 roles, 54 permissions.
+- Tier A HTTP QA script (86/86 checks) verified against the live server:
+  * Login flow per role using real CSRF sessions.
+  * Full permission matrix across all 15 resources for all 6 roles.
+  * Per-role sidebar/nav checks.
+  * Dashboard title, tooltip markers, nav groups.
+  * Access Control pages (users/roles create/list).
+  * End-to-end audit trail check (simulated employee edit produced an
+    employee.updated audit row with old/new values).
+- Note: Skill/Project category policies intentionally gate on the parent
+  'skills'/'projects' permissions (no separate seeded permissions), which is
+  why admin can view those pages.
+
+--------------------------------------------------------------------------------
+8. AUTHORIZATION — ROLES & PERMISSIONS
+--------------------------------------------------------------------------------
+- super-admin  — everything (gate bypass).
+- admin        — employees, skills, certs, languages, projects, assignments,
+                 users (manage), roles (view/update), approve assignments.
+- hr           — employees (manage), skills/certs/languages (view/update),
+                 projects (view).
+- resource-manager — organization entities + employees (manage).
+- project-manager  — view employees, projects & assignments (manage), approve.
+- employee     — panel access only (empty sidebar).
+
+Demo accounts (password = "password"):
+  super-admin     admin@djezzy.test
+  admin           admin@example.com
+  hr              hr@example.com
+  resource-manager resources@example.com
+  project-manager projects@example.com
+  employee        employee@example.com
+
+--------------------------------------------------------------------------------
+9. TEST SUITE
+--------------------------------------------------------------------------------
+18 test files, 69 tests, 315 assertions — all green.
+Coverage includes: migrations/seeders, organization hierarchy, traits/pivots,
+availability & workload range rules, project requirements, assignments +
+AssignmentService rules, data integrity, audit observers, auth, settings, and
+admin smoke tests (every resource page, relation managers, dashboard widgets).
+Laravel Pint used for code formatting.
+
+--------------------------------------------------------------------------------
+10. VERSION CONTROL
+--------------------------------------------------------------------------------
+- Repository initialized on branch `main`.
+- Remote origin -> git@github.com:Mohamed-Benkheira/BTS-rahmania.git
+- First commit 684722a: "feat: Djezzy resource assignment platform foundation"
+  (462 files; .env, vendor/, node_modules/, runtime storage excluded via the
+  standard Laravel .gitignore).
+
+--------------------------------------------------------------------------------
+11. WHAT WAS INTENTIONALLY LEFT OUT / DEFERRED
+--------------------------------------------------------------------------------
+- Recommendation engine (Milestone 4 / specs.txt §6, §13, §15): the
+  recommendation run service, eligibility filtering, weighted scoring, result
+  storage, explanations, and manager approval/override are NOT implemented.
+  Recommendation tables exist in the schema but hold no data or logic.
+- project_evaluations Filament resource: not built (schema exists).
+- Tier B real-browser (Playwright) QA: not performed; tooltip hover behavior is
+  covered indirectly by the dashboard widget tests.
+
+--------------------------------------------------------------------------------
+12. MILESTONE 4 — RECOMMENDATION ENGINE
+--------------------------------------------------------------------------------
+- RecommendationService (app/Services/RecommendationService.php): generates
+  ranked candidate recommendations for a project based on its assignment_mode:
+  * single_employee / multiple_employees -> ranks eligible ACTIVE employees not
+    already assigned to the project (approved/active assignments).
+  * team -> ranks teams that have at least one active employee and are not
+    already assigned, using the team's COLLECTIVE skills/certs/languages as well
+    as average availability and workload across active members.
+  * department -> ranks departments (any with active employees) using collective
+    capabilities and averages computed across all active department employees.
+- Weighted scoring (defaults): skills 40%, certifications 20%, languages 15%,
+  availability 15%, workload 10%. Weights for absent requirement categories are
+  dropped and the remainder renormalized. Custom weights injectable via
+  `weights()`.
+- Each run stores: algorithm version, criteria snapshot (project id,
+  assignment_mode, requirement counts, weights), executed_at; rankings are saved
+  as Recommendation rows with employee_id XOR team_id XOR department_id (only
+  the target matching the project mode is populated), rank, total_score,
+  explanation (per-component breakdown incl. team_size / department_size), and
+  status (pending/approved/rejected). Audit log entry 'recommendation.run' is
+  written for every run.
+- Filament integration:
+  * EditProject header action "Recommend" runs the engine via confirmation modal
+    and notifies with count + top pick (name resolves to employee/team/
+    department depending on mode).
+  * RecommendationsRelationManager on ProjectResource shows run history (run #,
+    executor, algorithm, assignment mode badge, candidate count, executed at)
+    with a "View Rankings" modal rendering the ranked list + score breakdown.
+  * resources/views/filament/admin/recommendations-modal.blade.php renders each
+    ranked target with score %, status badge, and per-component breakdown.
+- RecommendationPolicy + ProjectEvaluationPolicy created and registered in
+  AppServiceProvider.
+- ProjectEvaluation full CRUD resource added under
+  app/Filament/Admin/Resources/ProjectEvaluations (schema existed).
+- Notifications table migration added (standard Laravel schema) so Filament
+  notifications persist.
+- RolesAndPermissionsSeeder extended to 62 permissions; 8 M4-related permissions
+  granted to admin/project-manager (run + approve recommendations, evaluations)
+  and hr (view/create evaluations).
+- Tests: 9 new RecommendationServiceTest cases incl. team-mode and
+  department-mode ranking + eligibility exclusions. Suite now 85 tests / 357
+  assertions — all green.
+- Note: Assignments intentionally remain a manual, human-audited step; the
+  engine recommends, managers decide.
+
+--------------------------------------------------------------------------------
+13. WHAT WAS INTENTIONALLY LEFT OUT / DEFERRED (REVISED)
+--------------------------------------------------------------------------------
+- Tier B real-browser (Playwright) QA: not performed; tooltip hover behavior is
+  covered indirectly by the dashboard widget tests.
+================================================================================

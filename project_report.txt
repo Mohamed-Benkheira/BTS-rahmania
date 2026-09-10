@@ -1,0 +1,201 @@
+================================================================================
+GRADUATION PROJECT REPORT
+Djezzy Resource Assignment Platform
+================================================================================
+Presented as part of a BTS Informatics project.
+Stack: Laravel 13.24 / Filament v5.7.6 / PostgreSQL / Fortify / Spatie Permission
+v8 / Inertia v3 + React. Test suite: 69 tests, 315 assertions. Repository:
+git@github.com:Mohamed-Benkheira/BTS-rahmania.git
+
+--------------------------------------------------------------------------------
+1. WHAT IS THIS APPLICATION?
+--------------------------------------------------------------------------------
+The Djezzy Resource Assignment Platform is a web application that centralizes
+human-resource and project-staffing operations for Djezzy. It lets the company:
+
+  * Maintain a complete, structured directory of the organization
+    (business units, departments, teams, positions, locations).
+  * Keep a rich profile for every employee: personal data, hierarchy/manager,
+    skills with proficiency levels, certifications, languages, availability
+    (percentage + dates), and current workload.
+  * Manage a catalog of skills, certifications, languages, and certifications.
+  * Track projects (IT and non-IT), their priorities, budgets, dates, and the
+    skill/certification/language requirements they demand.
+  * Assign people and teams to projects, with a controlled approval workflow
+    and full status history.
+  * Report on the workforce: staffing pressure, expiring certifications,
+    over-allocation, and workload vs. availability.
+
+In short: the application replaces spreadsheets and email for deciding "who
+should work on what", and it keeps an auditable record of every decision.
+
+--------------------------------------------------------------------------------
+2. TARGET USERS AND THEIR RESPONSIBILITIES
+--------------------------------------------------------------------------------
+The application distinguishes six profiles. Each logs into the admin panel at
+/admin and only sees the areas they are responsible for. (Passwords are
+"password" for every demo account below.)
+
+  ---------------------------------------------------------------
+  ROLE              | RESPONSIBILITIES                        | USERS
+  ---------------------------------------------------------------
+  super-admin       | Full access to everything; manages users | admin@djezzy.test
+                    | and roles; final authority.             |
+  admin             | Approves/rejects assignments; authorizes| admin@example.com
+                    | employees; manages projects, skills,    |
+                    | certifications, languages; manages users|
+                    | and edits roles.                        |
+  hr                | Maintains the employee directory and    | hr@example.com
+                    | their skills/certifications/languages;  |
+                    | can view but not edit projects.         |
+  resource-manager  | Structures the organization (units,     | resources@example.com
+                    | departments, teams, positions,          |
+                    | locations); manages employees.          |
+  project-manager   | Creates projects and assignments, then  | projects@example.com
+                    | approves them; can view employees.      |
+  employee          | Can access the panel but sees no         | employee@example.com
+                    | management pages (own view reserved for |
+                    | a future self-service feature).        |
+  ---------------------------------------------------------------
+
+Role / permission detail (54 permissions; counts below are direct per role):
+
+  * super-admin     (54 perms) — every permission.
+  * admin           (25 perms) — employees, skills, certifications, languages,
+                    projects, assignments (create/update/delete/view) +
+                    approve assignments, users (all), roles (view/update).
+  * resource-manager(18 perms) — business units, departments, teams, positions,
+                    locations (all CRUD) + employees (all CRUD).
+  * hr              (10 perms) — employees (create/update/view), skills,
+                    certifications, languages (view/update), view projects.
+  * project-manager ( 9 perms) — view employees, projects + assignments
+                    (create/update/view) + approve assignments.
+  * employee        ( 0 perms) — panel access only.
+
+--------------------------------------------------------------------------------
+3. FEATURE WALKTHROUGH
+--------------------------------------------------------------------------------
+3.1 Organization & employees
+  Business Units, Departments, Teams, Positions, and Locations are managed with
+  full CRUD. Departments/teams can have managers. Employees are linked to a
+  department, team, and position, and can also have a manager. Each employee
+  profile aggregates, via relation managers: skills (with 1-5 proficiency),
+  certifications (verified/unverified), languages (with level), availability
+  (percentage, start/end), and workload percentages.
+
+3.2 Skills & certifications catalog
+  Skill Categories and Skills, Certifications, and Languages are managed as
+  reference data, and reused by employee profiles and by project requirements.
+
+3.3 Projects
+  Projects belong to a category (IT or non-IT), carry a priority, status, dates,
+  budget, and optional requirements. Project requirements and required
+  skills/certifications/languages are attached to each project so staffing needs
+  are explicit.
+
+3.4 Assignments
+  Assignments link employees (individual) or teams (or a mixed mode) to a
+  project with a start/end, percentage, and an approval lifecycle:
+    pending -> approved -> active -> completed, with rejected/cancelled paths.
+  Business rules are enforced by the AssignmentService:
+    * one current assignment per employee at a time;
+    * only active employees are assignable;
+    * status transitions are validated.
+  Every transition is recorded in assignment_status_history.
+
+3.5 Dashboard
+  A custom dashboard shows:
+    * 4 stat cards with tooltips and sparklines (e.g. Active Employees);
+    * 3 charts: employees by department, projects by status,
+      workload vs. availability;
+    * 4 tables: expiring certifications, over-allocated employees, projects
+      needing staffing, and a Recent Activity audit feed.
+
+3.6 Audit logging
+  Every important transition is recorded in audit_logs: assignment lifecycle
+  events, employee/project create/update/delete (old vs new values), and
+  user/role/permission changes. Monitoring is possible directly on the dashboard.
+
+3.7 Access control administration
+  New user and role resources were added: create users, assign roles, toggle
+  "active" access, link an account to an employee profile, and manage roles and
+  their permissions.
+
+--------------------------------------------------------------------------------
+4. DATA MODEL OVERVIEW (43 tables)
+--------------------------------------------------------------------------------
+  * Auth:        users, password_reset_tokens, sessions, passkeys, jobs,
+                 job_batches, failed_jobs, cache, cache_locks.
+  * RBAC:        roles, permissions, role_has_permissions, model_has_roles,
+                 model_has_permissions.
+  * Organization: business_units, departments, teams, positions, locations.
+  * Employees:   employees, employee_skills, employee_certifications,
+                 employee_languages, employee_availabilities, employee_workloads.
+  * Catalog:     skill_categories, skills, certifications, languages.
+  * Projects:    project_categories, projects, project_requirements,
+                 project_required_skills, project_required_certifications,
+                 project_required_languages.
+  * Assignments: assignments, assignment_members, assignment_teams,
+                 assignment_status_history.
+  * Audit:       audit_logs.
+  * (Reserved for the future recommendation engine: recommendation_runs,
+    recommendations, project_evaluations.)
+
+Design highlights:
+  * Soft deletes on employees, projects, and skills.
+  * CHECK constraints (proficiency 1-5, percentages 0-100, rating 1-5, date order).
+  * 26+ unique constraints against duplicate data.
+  * Partial unique index assignments_single_current: max one approved/active
+    assignment per project, while keeping history.
+  * employees.user_id FK uses RESTRICT so a user account cannot be deleted while
+    an employee profile references it.
+  * Circular manager FKs resolved safely (managers added in a follow-up migration).
+
+--------------------------------------------------------------------------------
+5. TECHNICAL ARCHITECTURE
+--------------------------------------------------------------------------------
+  * Backend: Laravel (Eloquent ORM, migrations, seeders, observers, a service
+    layer for assignment rules).
+  * Admin UI: Filament admin panel (15 resources, 8 widgets, 12 relation
+    managers) with a custom dashboard and 4 navigation groups.
+  * Auth: Laravel Fortify (login, 2FA, passkeys, email verification).
+  * Authorization: Spatie Laravel Permission (6 roles, 54 permissions) plus
+    policy classes (17 policies) for fine-grained access.
+  * Data: PostgreSQL.
+  * Frontend shell: Inertia + React starter (the admin itself is server-rendered).
+  * Seeding: 6 seeders + 18 factories produce realistic demo data — 4 business
+    units, 9 departments, 8 teams, 12 positions, 5 locations, 30 employees,
+    40 skills, 10 certifications, 8 languages, 10 project categories, 10 projects
+    (5 assigned).
+
+--------------------------------------------------------------------------------
+6. TESTING & QUALITY
+--------------------------------------------------------------------------------
+  * 18 test files, 69 tests, 315 assertions — all green.
+  * Covers migrations/seeders, organization hierarchy, traits/pivots,
+    availability & workload rules, project requirements, assignment rules,
+    data integrity (partial unique index, restrict FK), audit observers, auth,
+    settings, and admin smoke tests for every resource, relation manager, and
+    dashboard widget.
+  * Laravel Pint enforces code style; PHPStan configuration included.
+  * A black-box HTTP QA pass (86 checks) verified the permission matrix and
+    navigation for all six roles against the running server.
+
+--------------------------------------------------------------------------------
+7. STATUS vs. SPECIFICATIONS
+--------------------------------------------------------------------------------
+  * Milestone 1 (database), Milestone 2 (organization & employees), and
+    Milestone 3 (projects, assignments, dashboard) are complete.
+  * Milestone 4 (automatic recommendation engine) is intentionally deferred:
+    the recommendation tables exist in the schema but the scoring logic is not
+    implemented. project_evaluations CRUD is likewise not built, pending this
+    future work.
+
+--------------------------------------------------------------------------------
+8. VERSION CONTROL
+--------------------------------------------------------------------------------
+  * Branch: main.
+  * Remote: origin -> git@github.com:Mohamed-Benkheira/BTS-rahmania.git
+  * Initial commit 684722a: "feat: Djezzy resource assignment platform
+    foundation" (462 files).
+================================================================================

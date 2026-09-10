@@ -13,6 +13,7 @@ use App\Filament\Admin\Resources\Employees\RelationManagers\LanguagesRelationMan
 use App\Filament\Admin\Resources\Employees\RelationManagers\SkillsRelationManager;
 use App\Filament\Admin\Resources\Employees\RelationManagers\WorkloadsRelationManager;
 use App\Filament\Admin\Resources\Projects\Pages\EditProject;
+use App\Filament\Admin\Resources\Projects\RelationManagers\RecommendationsRelationManager;
 use App\Filament\Admin\Resources\Projects\RelationManagers\RequiredCertificationsRelationManager;
 use App\Filament\Admin\Resources\Projects\RelationManagers\RequiredLanguagesRelationManager;
 use App\Filament\Admin\Resources\Projects\RelationManagers\RequiredSkillsRelationManager;
@@ -35,6 +36,7 @@ use App\Models\Location;
 use App\Models\Position;
 use App\Models\Project;
 use App\Models\ProjectCategory;
+use App\Models\ProjectEvaluation;
 use App\Models\Skill;
 use App\Models\SkillCategory;
 use App\Models\Team;
@@ -203,6 +205,11 @@ class AdminPanelSmokeTest extends TestCase
                 Project::class,
                 EditProject::class,
             ],
+            'project recommendations' => [
+                RecommendationsRelationManager::class,
+                Project::class,
+                EditProject::class,
+            ],
         ];
     }
 
@@ -222,6 +229,7 @@ class AdminPanelSmokeTest extends TestCase
             'positions' => Position::class,
             'project-categories' => ProjectCategory::class,
             'projects' => Project::class,
+            'project-evaluations' => ProjectEvaluation::class,
             'skill-categories' => SkillCategory::class,
             'skills' => Skill::class,
             'teams' => Team::class,

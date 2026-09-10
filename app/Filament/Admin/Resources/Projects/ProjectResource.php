@@ -5,6 +5,7 @@ namespace App\Filament\Admin\Resources\Projects;
 use App\Filament\Admin\Resources\Projects\Pages\CreateProject;
 use App\Filament\Admin\Resources\Projects\Pages\EditProject;
 use App\Filament\Admin\Resources\Projects\Pages\ListProjects;
+use App\Filament\Admin\Resources\Projects\RelationManagers\RecommendationsRelationManager;
 use App\Filament\Admin\Resources\Projects\RelationManagers\RequiredCertificationsRelationManager;
 use App\Filament\Admin\Resources\Projects\RelationManagers\RequiredLanguagesRelationManager;
 use App\Filament\Admin\Resources\Projects\RelationManagers\RequiredSkillsRelationManager;
@@ -52,6 +53,7 @@ class ProjectResource extends Resource
             RequiredSkillsRelationManager::class,
             RequiredCertificationsRelationManager::class,
             RequiredLanguagesRelationManager::class,
+            RecommendationsRelationManager::class,
         ];
     }
 
