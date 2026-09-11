@@ -4,7 +4,7 @@ PROJECT HISTORY — Djezzy Resource Assignment Platform
 This file chronicles everything created for this project from start to now.
 Stack: Laravel 13.24.0 · Filament v5.7.6 · PostgreSQL · Fortify · Spatie
 Permission v8 · Inertia v3 + React · Playwright (Tier B browser QA). Test
-suite: 93 tests / 376 assertions (PHPUnit) + 5 Playwright e2e specs.
+suite: 124 tests / 492 assertions (PHPUnit) + 7 Playwright e2e specs.
 Repository: git@github.com:Mohamed-Benkheira/BTS-rahmania.git.
 
 --------------------------------------------------------------------------------
@@ -306,4 +306,129 @@ Laravel Pint used for code formatting.
     seeds the full database and asserts every project yields >= 1 candidate
     with no blockers.
 - Test suite now 96 tests / 406 assertions (PHPUnit) + 5 Playwright e2e — all green.
+
+--------------------------------------------------------------------------------
+15. MILESTONE 6 — EMPLOYEE SELF-SERVICE PORTAL (+ APPROVAL WORKFLOW + NOTIFICATIONS)
+--------------------------------------------------------------------------------
+Overview: employees now get a self-service React portal at /portal/* to update
+their own skill/language/certification/availability/profile data. Every change
+is a request that HR (or an admin as fallback) approves inside Filament, and
+in-app (database) notifications keep reviewers and employees in sync via an
+admin bell and an employee bell.
+
+Workflow & permission gate:
+  * Two new permissions: "view profile change requests" + "approve profile
+    change requests" (added to RolesAndPermissionsSeeder for super-admin, admin,
+    and hr; seeder re-run on the dev DB). ProfileChangeRequestService::canReview
+    = user->can('approve profile change requests'); HR approves every change,
+    admins/super-admin act as fallback.
+  * Requests are stored in profile_change_requests (employee FK restrict,
+    type enum profile|skill|language|certification|availability, subject_id,
+    payload JSON, previous JSON, status pending|approved|rejected, submitted_note,
+    reviewer_id/note, reviewed_at). Approval applies the change immediately; the
+    "previous" snapshot is kept for audit.
+  * Per-type business rules on approval: profile fields phone/biography/
+    profile_photo_path/birth_date are overwritten; skills attached/updated with
+    verified_at + verified_by; certifications attached/updated with
+    verification_status=verified and document kept; languages get speaking/
+    writing/reading levels; availability inserts a new record (latest start date
+    wins, no overlap blocking; status inferred from the percentage: 0 => on leave,
+    <100 => partially available, full => available).
+  * Domain exceptions guard double-review and unauthorized review; audit actions:
+    profile-change.requested / approved / rejected.
+
+Notifications & bell:
+  * DB-channel notifications: ProfileChangeRequested (to HR+admin on submit),
+    ProfileChangeResolved (to the employee on approve/reject), plus the existing
+    AssignmentCreated (reviewers) and AssignmentStatusChanged (members);
+    CertificationNearExpiry ran by `php artisan notification:certifications-near-expiry`
+    (default --days=60) for verified certs expiring within the window.
+  * App\Services\NotificationService (toReviewers / toUsers) is resilient when
+    roles are not yet seeded. Admin panel enables filament()->databaseNotifications()
+    + 30s polling; the employee portal renders a bell (NotificationBell) polling
+    unread-count/recent JSON every 30s with a dropdown + mark-all-read.
+
+Portal backend & frontend:
+  * EnsureEmployeeProfile middleware gates /portal/* to authenticated users with a
+    linked employee profile + employee role (403 JSON for APIs, redirect home
+    otherwise). Routes under routes/portal.php, names portal.*, no verified-mail
+    requirement since HR-created accounts may be unverified.
+  * Portal controllers: dashboard (stats, current assignment, latest availability),
+    profile, skills, languages, certifications (document upload to the
+    certification-documents public disk), availability, requests, assignments,
+    evaluations, notifications (unread-count + recent JSON).
+  * Shared Inertia props extended: auth.roles, auth.employee, notifications.
+    unread_count, flash.toast. Controllers flash via Inertia::flash('toast',...)
+    matching the existing useFlashToast hook.
+  * React portal: own PortalLayout + PortalSidebar (10 nav items), 10 pages under
+    resources/js/pages/portal/*, wireframes consistent with the admin design
+    language, wayfinder helpers regenerated with .form() variants.
+  * Evaluations page fixed to the real project_evaluations schema (rating,
+    communication/delivery/quality ratings, comments, evaluated_at).
+
+Filament review resource:
+  * ProfileChangeRequests resource (Employees group, nav sort 6): list + view
+    only (no create). Table: employee, type badge, subject (subjectDisplay()),
+    status badge, submitted (default sort desc), reviewed-by; type/status select
+    filters; employee cell links straight to the view page. View page infolist
+    shows employee/type/subject/status/note/reviewer plus KeyValueEntry
+    "Proposed changes" and (when present) "Previous state", with header
+    Approve/Reject modal actions (reviewer note optional) that resolve the
+    request, audit, notify, and refresh the form state.
+
+Fixes made while wiring tests:
+  * notifications.data converted json -> jsonb (new migration + USING cast) —
+    Filament's databaseNotifications() query (data->>'format') requires jsonb on
+    PostgreSQL.
+  * NotificationService::toReviewers no longer throws when roles are missing.
+  * ProfileChangeRequestService::snapshot now receives $payload (was undefined).
+  * ProfileChangeRequestsTable: defaultSort moved to the table (not the column);
+    subjectDisplay() exposed via ->state() callback (method, not an attribute);
+    resource no longer sets recordTitleAttribute to the type enum.
+  * Infolist Section imported from Filament\Schemas\Components.
+  * Modal Approve/Reject submit labels set explicitly.
+  * Double-toast bug fixed: useFlashToast removed from PortalLayout (the global
+    sonner Toaster already subscribes and was rendering duplicate toasts).
+  * EvaluationsController referenced a non-existent column set; rewired to the
+    real schema and the portal page updated.
+
+Tests:
+  * New PHPUnit: ProfileChangeRequestServiceTest (submit snapshot + validation per
+    type, approve applies profile/skill/cert/language/availability correctly incl.
+    verified pivots, reject leaves data untouched, permission + double-review
+    guards, audit rows, reviewer/employee notifications),
+    NotificationServiceTest (role targeting, actor exclusion, missing-role
+    resilience), PortalAccessTest (middleware for employee/admin/absence,
+    page render loop, profile submit, skill validation, unread-count JSON).
+  * New Playwright e2e (portal-profile-flow.spec.ts + App\Console\Commands\
+    EnsureE2EEmployee fixture): employee logs into /portal, submits a language
+    change, HR/super-admin approves it in /admin/profile-change-requests, and the
+    employee sees the Approved badge + unread bell; a second spec verifies a
+    pending profile request lands in the admin table.
+  * Baselines fixed while wiring: AssignmentServiceTest suite needed the new test
+    suite counts (role resilience) to stay green.
+- Test suite now 119 tests / 481 assertions (PHPUnit) + 7 Playwright e2e — all green.
+
+-------------------------------------------------------------------------------
+M6 TAIL — URL ROUTING (root redirect)
+-------------------------------------------------------------------------------
+- config/fortify.php 'home' now '/'; routes/web.php root route (named home, no
+  longer the welcome page): guests -> /login, employee role -> /portal (or
+  /dashboard when the account has no linked employee profile, to avoid an
+  EnsureEmployeeProfile redirect loop), everyone else -> /admin (Filament).
+- welcome page removed (resources/js/pages/welcome.tsx deleted; welcome case
+  removed from resources/js/app.tsx).
+- Custom App\Http\Responses\LoginResponse (bound in FortifyServiceProvider)
+  redirects post-login straight to the user's defaultPath() (with intended())
+  and uses Inertia::location() so the login POST (an X-Inertia request) can
+  navigate to the non-Inertia Filament panel (for non-Inertia requests it falls
+  back to a normal redirect). Location logic shared via App\Models\User::
+  defaultPath(). Without the X-Inertia-Location (409) signal the Inertia client
+  swallowed the admin redirect and the browser stayed on /login.
+- Tests: new RootRedirectTest (guest->login, employee->portal,
+  employee-without-profile->dashboard, admin->/admin, no-role->/admin);
+  AuthenticationTest login now asserts redirect to /admin; EmailVerification,
+  Registration, VerificationNotification, Example tests assert route('home');
+  e2e portal spec waits for /portal.
+- Test suite now 124 tests / 492 assertions (PHPUnit) + 7 Playwright e2e — all green.
 ================================================================================

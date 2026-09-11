@@ -185,6 +185,12 @@ class Employee extends Model
         return $this->hasMany(ProjectEvaluation::class);
     }
 
+    /** @return HasMany<ProfileChangeRequest, $this> */
+    public function profileChangeRequests(): HasMany
+    {
+        return $this->hasMany(ProfileChangeRequest::class);
+    }
+
     /** @param Builder<Employee> $query
      *  @return Builder<Employee> */
     public function scopeActive(Builder $query): Builder

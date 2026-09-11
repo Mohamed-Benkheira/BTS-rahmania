@@ -72,4 +72,16 @@ class User extends Authenticatable implements FilamentUser, PasskeyUser
     {
         return $this->hasOne(Employee::class);
     }
+
+    /**
+     * Where an authenticated user should land after login or when visiting the root URL.
+     */
+    public function defaultPath(): string
+    {
+        if ($this->hasRole('employee')) {
+            return $this->employee === null ? '/dashboard' : '/portal';
+        }
+
+        return '/admin';
+    }
 }

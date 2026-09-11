@@ -66,6 +66,8 @@ class RolesAndPermissionsSeeder extends Seeder
             'create project evaluations',
             'update project evaluations',
             'delete project evaluations',
+            'view profile change requests',
+            'approve profile change requests',
             'view users',
             'create users',
             'update users',
@@ -98,6 +100,7 @@ class RolesAndPermissionsSeeder extends Seeder
             'view assignments', 'create assignments', 'update assignments', 'approve assignments',
             'view recommendations', 'run recommendations', 'approve recommendations',
             'view project evaluations', 'create project evaluations', 'update project evaluations',
+            'view profile change requests', 'approve profile change requests',
             'view users', 'create users', 'update users',
             'view roles', 'update roles',
         ]);
@@ -109,6 +112,7 @@ class RolesAndPermissionsSeeder extends Seeder
             'view languages', 'update languages',
             'view projects',
             'view project evaluations', 'create project evaluations',
+            'view profile change requests', 'approve profile change requests',
         ]);
 
         $resourceManager->syncPermissions([

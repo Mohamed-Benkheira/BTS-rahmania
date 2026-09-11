@@ -4,8 +4,8 @@ Djezzy Resource Assignment Platform
 ================================================================================
 Presented as part of a BTS Informatics project.
 Stack: Laravel 13.24 / Filament v5.7.6 / PostgreSQL / Fortify / Spatie Permission
-v8 / Inertia v3 + React / Playwright. Test suite: 96 PHPUnit tests, 406 assertions,
-plus 5 Playwright Tier B browser e2e specs. Repository:
+v8 / Inertia v3 + React / Playwright. Test suite: 124 PHPUnit tests, 492 assertions,
+plus 7 Playwright Tier B browser e2e specs. Repository:
 git@github.com:Mohamed-Benkheira/BTS-rahmania.git
 
 --------------------------------------------------------------------------------
@@ -24,6 +24,9 @@ human-resource and project-staffing operations for Djezzy. It lets the company:
     skill/certification/language requirements they demand.
   * Assign people and teams to projects, with a controlled approval workflow
     and full status history.
+  * Let employees manage their own profile gaps through the self-service portal
+    at /portal/* (skills, languages, certifications, availability, contact data)
+    with every change going through HR/admin approval.
   * Report on the workforce: staffing pressure, expiring certifications,
     over-allocation, and workload vs. availability.
 
@@ -42,36 +45,42 @@ The application distinguishes six profiles. Each logs into the admin panel at
   ---------------------------------------------------------------
   super-admin       | Full access to everything; manages users | admin@djezzy.test
                     | and roles; final authority.             |
-  admin             | Approves/rejects assignments; authorizes| admin@example.com
-                    | employees; manages projects, skills,    |
-                    | certifications, languages; manages users|
-                    | and edits roles.                        |
+  admin             | Approves/rejects assignments and profile| admin@example.com
+                    | change requests; manages projects,      |
+                    | skills, certifications, languages;      |
+                    | manages users and edits roles.          |
   hr                | Maintains the employee directory and    | hr@example.com
                     | their skills/certifications/languages;  |
-                    | can view but not edit projects.         |
+                    | approves every employee profile change |
+                    | request; can view but not edit projects.|
   resource-manager  | Structures the organization (units,     | resources@example.com
                     | departments, teams, positions,          |
                     | locations); manages employees.          |
   project-manager   | Creates projects and assignments, then  | projects@example.com
                     | approves them; can view employees.      |
-  employee          | Can access the panel but sees no         | employee@example.com
-                    | management pages (own view reserved for |
-                    | a future self-service feature).        |
+  employee          | Uses the self-service portal (/portal)  | employee@example.com
+                    | to submit skill/language/certification/ |
+                    | availability/profile changes and tracks|
+                    | approval status; reviews own assignments|
+                    | and evaluations; receives in-app        |
+                    | notifications (bell).                  |
   ---------------------------------------------------------------
 
-Role / permission detail (54 permissions; counts below are direct per role):
+Role / permission detail (56 perms — 2 new for the portal; direct-per-role):
 
-  * super-admin     (54 perms) — every permission.
-  * admin           (25 perms) — employees, skills, certifications, languages,
+  * super-admin     (56 perms) — every permission.
+  * admin           (27 perms) — employees, skills, certifications, languages,
                     projects, assignments (create/update/delete/view) +
-                    approve assignments, users (all), roles (view/update).
+                    approve assignments, profile change requests (view/approve),
+                    users (all), roles (view/update).
   * resource-manager(18 perms) — business units, departments, teams, positions,
                     locations (all CRUD) + employees (all CRUD).
-  * hr              (10 perms) — employees (create/update/view), skills,
-                    certifications, languages (view/update), view projects.
+  * hr              (12 perms) — employees (create/update/view), skills,
+                    certifications, languages (view/update), view projects,
+                    profile change requests (view/approve).
   * project-manager ( 9 perms) — view employees, projects + assignments
                     (create/update/view) + approve assignments.
-  * employee        ( 0 perms) — panel access only.
+  * employee        ( 0 perms) — portal access only.
 
 --------------------------------------------------------------------------------
 3. FEATURE WALKTHROUGH
@@ -122,8 +131,27 @@ Role / permission detail (54 permissions; counts below are direct per role):
   "active" access, link an account to an employee profile, and manage roles and
   their permissions.
 
+3.8 Employee self-service portal & approval workflow
+  Employees sign in to /portal/* (a React/Inertia app, not a second admin panel)
+  where they can submit profile changes: contact data (phone/biography/photo/
+  birth date), skills, languages, certifications (with a document upload), and
+  availability windows. Nothing is applied directly — every request is stored in
+  profile_change_requests by ProfileChangeRequestService (with a "previous"
+  snapshot for audit) and must be approved by HR (admin/super-admin as fallback)
+  in the Filament "Profile Requests" resource (list + view, Approve/Reject
+  actions with an optional note).
+  On approval the change is applied: profile fields overwritten; skills and
+  certifications attached/updated and marked verified (certifications also keep
+  their uploaded document); languages get their levels; availability inserts a
+  new record (latest start date wins, status inferred from the percentage).
+  Submitting notifies reviewers; approving/rejecting notifies the employee —
+  all through database notifications surfaced as a bell in the portal (30s
+  polling, mark-all-read) and Filament's built-in admin notification bell.
+  A nightly-style command (notification:certifications-near-expiry, default 60
+  days) reminds employees when verified certifications are about to expire.
+
 --------------------------------------------------------------------------------
-4. DATA MODEL OVERVIEW (43 tables)
+4. DATA MODEL OVERVIEW (44 tables)
 --------------------------------------------------------------------------------
   * Auth:        users, password_reset_tokens, sessions, passkeys, jobs,
                  job_batches, failed_jobs, cache, cache_locks.
@@ -136,9 +164,12 @@ Role / permission detail (54 permissions; counts below are direct per role):
   * Projects:    project_categories, projects, project_requirements,
                  project_required_skills, project_required_certifications,
                  project_required_languages.
-  * Assignments: assignments, assignment_members, assignment_teams,
-                 assignment_status_history.
-  * Audit:       audit_logs.
+* Assignments: assignments, assignment_members, assignment_teams,
+                  assignment_status_history.
+   * Portal:     profile_change_requests (type, status, payload/previous JSON,
+                  reviewer fields), notifications (data column is jsonb so
+                  Filament's databaseNotifications() query works on PostgreSQL).
+   * Audit:       audit_logs.
   * (Reserved for the future recommendation engine: recommendation_runs,
     recommendations, project_evaluations.)
 
@@ -155,15 +186,18 @@ Design highlights:
 --------------------------------------------------------------------------------
 5. TECHNICAL ARCHITECTURE
 --------------------------------------------------------------------------------
-  * Backend: Laravel (Eloquent ORM, migrations, seeders, observers, a service
-    layer for assignment rules).
-  * Admin UI: Filament admin panel (15 resources, 8 widgets, 12 relation
-    managers) with a custom dashboard and 4 navigation groups.
+  * Backend: Laravel (Eloquent ORM, migrations, seeders, observers, service
+    layers for assignment and profile-change rules, notification service).
+  * Admin UI: Filament admin panel (16 resources, 8 widgets, 12 relation
+    managers) with a custom dashboard and 4 navigation groups, plus database
+    notifications (bell) with 30s polling.
   * Auth: Laravel Fortify (login, 2FA, passkeys, email verification).
-  * Authorization: Spatie Laravel Permission (6 roles, 54 permissions) plus
+  * Authorization: Spatie Laravel Permission (6 roles, 56 permissions) plus
     policy classes (17 policies) for fine-grained access.
   * Data: PostgreSQL.
-  * Frontend shell: Inertia + React starter (the admin itself is server-rendered).
+  * Frontend: Inertia + React for the employee self-service portal at /portal/*
+    (own layout + sidebar, 10 pages, wayfinder route helpers, portal middleware
+    gating employee-linked accounts).
   * Seeding: 6 seeders + 18 factories produce realistic demo data — 4 business
     units, 9 departments, 8 teams, 12 positions, 5 locations, 30 employees,
     40 skills, 10 certifications, 8 languages, 10 project categories, 10 projects
@@ -172,15 +206,21 @@ Design highlights:
 --------------------------------------------------------------------------------
 6. TESTING & QUALITY
 --------------------------------------------------------------------------------
-  * 18 test files, 69 tests, 315 assertions — all green.
+  * 22 test files, 119 tests, 481 assertions — all green.
   * Covers migrations/seeders, organization hierarchy, traits/pivots,
     availability & workload rules, project requirements, assignment rules,
     data integrity (partial unique index, restrict FK), audit observers, auth,
-    settings, and admin smoke tests for every resource, relation manager, and
-    dashboard widget.
+    settings, profile-change request service (per-type validation, approval
+    application, guards, notifications), notification service targeting, portal
+    middleware/controllers, and admin smoke tests for every resource, relation
+    manager, and dashboard widget.
   * Laravel Pint enforces code style; PHPStan configuration included.
   * A black-box HTTP QA pass (86 checks) verified the permission matrix and
     navigation for all six roles against the running server.
+  * Playwright Tier B suites (7 specs): admin session fixture, rankings modal in
+    light/dark, assignment-creation flow, and the employee-portal flow (employee
+    submits a language change -> HR approves in Filament -> employee sees the
+    Approved badge and the unread bell notification).
 
 --------------------------------------------------------------------------------
 7. STATUS vs. SPECIFICATIONS
@@ -196,8 +236,18 @@ Design highlights:
     ProjectResource, a "Create Assignment" header action on EditProject, and
     "Create Assignment from Top Match" on recommendation runs (approves the
     rank-1 recommendation and attaches the recommended candidates).
+  * Milestone 6 (employee self-service portal) is complete: employees submit
+    profile-change requests at /portal/*, HR/admin approves them in Filament
+    ("Profile Requests" resource), notifications keep everyone informed, and the
+    cert-expiry reminder command runs on a schedule.
+  * URL routing: the root URL redirects by role — guests to /login, employees to
+    /portal, everyone else to /admin (Filament). A custom Fortify login response
+    redirects post-login to the matching destination via Inertia's
+    X-Inertia-Location mechanism, so logging in correctly lands on the Filament
+    panel or employee portal without going through a second redirect.
   * Tier B real-browser QA delivered with Playwright (admin session fixture,
-    light/dark rankings-modal rendering, assignment creation flow).
+    light/dark rankings-modal rendering, assignment creation flow, employee
+    portal submit→approve→notify flow).
 
 --------------------------------------------------------------------------------
 8. VERSION CONTROL
@@ -206,5 +256,5 @@ Design highlights:
   * Remote: origin -> git@github.com:Mohamed-Benkheira/BTS-rahmania.git
   * Commits: 684722a "feat: Djezzy resource assignment platform foundation",
     e030a8a "feat: recommendation engine with employee/team/department modes",
-    plus the M5 hardening/loop-closing commit.
+    plus the M5 hardening/loop-closing commit and the M6 employee-portal commit.
 ================================================================================

@@ -12,6 +12,8 @@ use App\Models\Employee;
 use App\Models\Project;
 use App\Models\Team;
 use App\Models\User;
+use App\Notifications\AssignmentCreated;
+use App\Notifications\AssignmentStatusChanged;
 use Illuminate\Support\Carbon;
 
 class AssignmentService
@@ -51,6 +53,11 @@ class AssignmentService
 
         $this->recordHistory($assignment, null, AssignmentStatus::Pending);
         $this->audit->assignmentCreated($assignment, $this->actor);
+
+        app(NotificationService::class)->toReviewers(
+            new AssignmentCreated($assignment),
+            $this->actor,
+        );
 
         return $assignment;
     }
@@ -184,6 +191,8 @@ class AssignmentService
         $this->recordHistory($assignment, $old, AssignmentStatus::Approved, $reason);
         $this->audit->assignmentTransition($assignment, 'approved', $old->value, $this->actor);
 
+        $this->notifyMembers($assignment);
+
         return $assignment->refresh();
     }
 
@@ -196,6 +205,8 @@ class AssignmentService
 
         $this->recordHistory($assignment, $old, AssignmentStatus::Active, $reason);
         $this->audit->assignmentTransition($assignment, 'activated', $old->value, $this->actor);
+
+        $this->notifyMembers($assignment);
 
         return $assignment->refresh();
     }
@@ -214,6 +225,8 @@ class AssignmentService
 
         $this->recordHistory($assignment, $old, AssignmentStatus::Completed, $reason);
         $this->audit->assignmentTransition($assignment, 'completed', $old->value, $this->actor);
+
+        $this->notifyMembers($assignment);
 
         return $assignment->refresh();
     }
@@ -271,6 +284,18 @@ class AssignmentService
         if (! in_array($new, $valid, true)) {
             throw new \DomainException("Cannot transition assignment from [{$assignment->status->value}] to [{$new->value}].");
         }
+    }
+
+    private function notifyMembers(Assignment $assignment): void
+    {
+        $users = $assignment->members()->with('user')->get()
+            ->map(fn (Employee $employee) => $employee->user)
+            ->filter();
+
+        app(NotificationService::class)->toUsers(
+            $users,
+            new AssignmentStatusChanged($assignment, $assignment->status->value),
+        );
     }
 
     private function recordHistory(Assignment $assignment, ?AssignmentStatus $old, AssignmentStatus $new, ?string $reason = null): void
