@@ -15,9 +15,11 @@ class DatabaseSeeder extends Seeder
         $this->call(OrganizationSeeder::class);
         $this->call(TraitSeeder::class);
         $this->call(EmployeeSeeder::class);
-        $this->call(ProjectSeeder::class);
 
         $this->createUsers();
+
+        $this->call(ProjectSeeder::class);
+        $this->call(HistorySeeder::class);
     }
 
     private function createUsers(): void
@@ -49,33 +51,15 @@ class DatabaseSeeder extends Seeder
 
     private function linkUsersToEmployees(): void
     {
-        $link = function (string $email, array $constraints): void {
+        $links = EmployeeSeeder::reservedLinks();
+
+        foreach ($links as $email => $employeeCode) {
             $user = User::where('email', $email)->first();
+            $employee = Employee::where('employee_code', $employeeCode)->first();
 
-            if ($user === null) {
-                return;
-            }
-
-            $query = Employee::query()->whereNull('user_id')->orderBy('id');
-
-            if (isset($constraints['department'])) {
-                $query->whereHas('department', fn ($q) => $q->where('code', $constraints['department']));
-            }
-
-            if (isset($constraints['position'])) {
-                $query->whereHas('position', fn ($q) => $q->where('code', $constraints['position']));
-            }
-
-            $employee = $query->first();
-
-            if ($employee !== null) {
+            if ($user !== null && $employee !== null && $employee->user_id === null) {
                 $employee->update(['user_id' => $user->id]);
             }
-        };
-
-        $link('hr@example.com', ['department' => 'DEPT-HR']);
-        $link('resources@example.com', ['department' => 'DEPT-IT']);
-        $link('projects@example.com', ['position' => 'POS-PM']);
-        $link('employee@example.com', []);
+        }
     }
 }

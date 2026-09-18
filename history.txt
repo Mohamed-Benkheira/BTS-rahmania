@@ -431,4 +431,69 @@ M6 TAIL — URL ROUTING (root redirect)
   Registration, VerificationNotification, Example tests assert route('home');
   e2e portal spec waits for /portal.
 - Test suite now 124 tests / 492 assertions (PHPUnit) + 7 Playwright e2e — all green.
+
+-------------------------------------------------------------------------------
+M7 — REALISTIC LARGE-SCALE SEED DATA
+-------------------------------------------------------------------------------
+- Goal: a believable "medium-size company" dataset for the dev/demo database so
+  every screen shows rich, realistic content instead of 30 rows.
+- OrganizationSeeder + TraitSeeder validated and expanded: 5 business units,
+  22 departments, 62 teams, 50 positions, 12 locations; 9 skill categories,
+  86 skills, 30 certifications, 11 languages.
+- EmployeeSeeder rewritten from scratch (runs ~15-19s):
+  * 300 employees (EMP-0001..0300) with realistic names/emails/phones, random
+    hire dates and statuses (>80% active), department/team/position/manager
+    hierarchy wired per business-unit pool, ~2200 availabilities, ~2000 recent
+    skill rows, ~500 certifications, ~1000 languages, ~600 workload rows.
+  * Employee_skills/certifications/languages use real reference data matched by
+    slug (e.g. "Customer Relationship Management", not placeholder "CRM").
+  * Department managers, team leaders, and BU directors are wired consistently
+    with the organization.
+  * Deterministic special accounts via EmployeeSeeder::reservedLinks() /
+    breadthIds() so every login maps to a known, meaningful employee:
+      admin@djezzy.test  super-admin (no linked employee)
+      admin@example.com  admin      (system admin employee)
+      hr@example.com     hr         (first DEPT-HR manager-level employee, TL)
+      resources@example.com resource-manager (first DEPT-IT employee, mid SWE)
+      projects@example.com project-manager (first POS-PM outside DEPT-HR,
+                            SOLUTIONS)
+      employee@example.com employee  (a Store Manager, EMP-001)
+  * ~16 unassigned "breadth champions" hold all 8 mandatory project skills at
+    proficiency 4 plus 5 currently-valid verified certifications, so the
+    recommendation engine always has eligible candidates.
+  * A cohort of certifications near expiry / expires-soon for non-breadth
+    employees feeds the Expiring Certifications widget and reminder command.
+  * 296 of 300 employees get a linked user account (the 4 reserved are linked
+    by DatabaseSeeder::linkUsersToEmployees() from the reserved codes).
+- ProjectSeeder rewritten (runs ~3.5s):
+  * 50 projects across 14 categories with priority, status, date ranges,
+    budget, team/department/multiple-employee assignment modes.
+  * 88 assignments (single approved/active per project per the partial unique
+    index) + 421 assignment members + team linking; completed/archived projects
+    carry historical completed assignments, every 6th project a rejected or
+    cancelled one. Contributors exclude breadth champions/teams.
+  * Mandatory requirements restricted to a guaranteed universe (breadth skill
+    names at proficiency 3-4, breadth certifications 45% of projects,
+    no mandatory languages) so no recommendation run hits a hard blocker.
+  * Workload rows (with pretty forecast/actual curves) synthesized from active
+    assignment allocations.
+- HistorySeeder (new, runs ~37s): 90 project evaluations on completed projects,
+  30 recommendation runs (647 recommendations; the real RecommendationService
+  is exercised end-to-end via try/catch per project), 80 profile-change
+  requests (52 approved / 12 rejected / 16 pending) reviewed by the reserved
+  hr/admin/resources/projects accounts.
+- DatabaseSeeder order: RolesAndPermissions -> Organization -> Trait ->
+  Employee -> createUsers (6 fixed accounts) -> Project -> History; the 6 fixed
+  accounts are linked to employees by reserved code after EmployeeSeeder.
+- migrate:fresh --seed final counts: bu=5 dep=22 t=62 pos=50 loc=12 skcat=9
+  sk=86 cert=30 lang=11 emp=300 usr=302 prj=50 cat=14 assign=88 am=421
+  rr=30 rec=647 pe=90 pcr=80 es=2201 ec=509 el=1001 ea=515 ew=600 al=662.
+- phpunit.xml memory_limit raised to 1G so dashboard-widget smoke tests can
+  render charts/tables over the full 300-employee dataset.
+- Verification: DatabaseSeederTest + SeedDataProducesRecommendationsTest
+  (5 tests, 149 assertions) green; full Domain fast suite (64 tests) green;
+  Auth/Portal/Settings/Unit (51 tests) green; AdminPanelSmokeTest (4 tests,
+  all widgets over the full dataset) green; Playwright e2e 7/7 green.
+- Note: seed-heavy tests are slow (~3.5 min per seeding test classed run);
+  an optional SEED_SCALE env override for a reduced dataset is a future idea.
 ================================================================================

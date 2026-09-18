@@ -198,15 +198,20 @@ Design highlights:
   * Frontend: Inertia + React for the employee self-service portal at /portal/*
     (own layout + sidebar, 10 pages, wayfinder route helpers, portal middleware
     gating employee-linked accounts).
-  * Seeding: 6 seeders + 18 factories produce realistic demo data — 4 business
-    units, 9 departments, 8 teams, 12 positions, 5 locations, 30 employees,
-    40 skills, 10 certifications, 8 languages, 10 project categories, 10 projects
-    (5 assigned).
+  * Seeding: 6 seeders + 18 factories produce a realistic medium-size-company
+    dataset — 5 business units, 22 departments, 62 teams, 50 positions,
+    12 locations, 300 employees, 86 skills, 30 certifications, 11 languages,
+    50 project categories-laden projects, 88 assignments (421 members),
+    30 recommendation runs (647 recommendations), 90 project evaluations, and
+    80 profile-change requests. 6 fixed demo accounts link to deterministic
+    reserved employees; ~16 unassigned "breadth champions" guarantee the
+    recommendation engine always finds eligible candidates without blockers.
 
 --------------------------------------------------------------------------------
 6. TESTING & QUALITY
 --------------------------------------------------------------------------------
-  * 22 test files, 119 tests, 481 assertions — all green.
+  * 22 test files, 124 PHPUnit tests, 492 assertions — all green (with the
+    full 300-employee seeded dataset), plus 7 Playwright e2e specs.
   * Covers migrations/seeders, organization hierarchy, traits/pivots,
     availability & workload rules, project requirements, assignment rules,
     data integrity (partial unique index, restrict FK), audit observers, auth,
@@ -245,6 +250,12 @@ Design highlights:
     redirects post-login to the matching destination via Inertia's
     X-Inertia-Location mechanism, so logging in correctly lands on the Filament
     panel or employee portal without going through a second redirect.
+  * Large-scale seed data (Milestone 7) is complete: the demo/dev database now
+    models a 300-employee company across the full domain using real reference
+    data, with deterministic reserved demo accounts, guaranteed-no-blockers
+    recommendation runs, and full history (evaluations, recommendation runs,
+    profile-change requests). Seeding, sanity tests, admin-smoke tests over the
+    full dataset, and the Playwright e2e suite all run green.
   * Tier B real-browser QA delivered with Playwright (admin session fixture,
     light/dark rankings-modal rendering, assignment creation flow, employee
     portal submit→approve→notify flow).
