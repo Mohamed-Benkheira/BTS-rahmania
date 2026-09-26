@@ -1,4 +1,5 @@
 import { Head, useForm, usePage } from '@inertiajs/react';
+import InputError from '@/components/input-error';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
@@ -18,6 +19,7 @@ import {
     SelectValue,
 } from '@/components/ui/select';
 import { store } from '@/routes/portal/certifications';
+import { formatDate } from '@/lib/utils';
 
 type Certification = {
     id: number;
@@ -51,7 +53,7 @@ function humanize(value: string | null | undefined): string {
 export default function PortalCertifications() {
     const { certifications, myCertifications } = usePage<PageProps>().props;
 
-    const { data, setData, errors, processing, submit } = useForm({
+    const { data, setData, errors, processing, submit, reset } = useForm({
         certification_id: '',
         certificate_number: '',
         issued_at: '',
@@ -65,6 +67,7 @@ export default function PortalCertifications() {
             method: 'post',
             preserveScroll: true,
             forceFormData: true,
+            onSuccess: () => reset(),
         });
     };
 
@@ -86,83 +89,99 @@ export default function PortalCertifications() {
                             <CardTitle className="text-base">Request a certification</CardTitle>
                             <CardDescription>Add or update a certificate</CardDescription>
                         </CardHeader>
-                        <CardContent className="space-y-4">
-                            <div className="grid gap-2">
-                                <Label htmlFor="certification_id">Certification</Label>
-                                <Select
-                                    value={data.certification_id}
-                                    onValueChange={(value) => setData('certification_id', value)}
-                                >
-                                    <SelectTrigger id="certification_id">
-                                        <SelectValue placeholder="Choose a certification" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        {certifications.map((certification) => (
-                                            <SelectItem key={certification.id} value={String(certification.id)}>
-                                                {certification.name}
-                                            </SelectItem>
-                                        ))}
-                                    </SelectContent>
-                                </Select>
-                            </div>
-
-                            <div className="grid gap-2">
-                                <Label htmlFor="certificate_number">Certificate number</Label>
-                                <Input
-                                    id="certificate_number"
-                                    value={data.certificate_number}
-                                    onChange={(e) => setData('certificate_number', e.target.value)}
-                                />
-                            </div>
-
-                            <div className="grid grid-cols-2 gap-4">
+                        <CardContent>
+                            <form
+                                onSubmit={(e) => {
+                                    e.preventDefault();
+                                    submitRequest();
+                                }}
+                                className="space-y-4"
+                            >
                                 <div className="grid gap-2">
-                                    <Label htmlFor="issued_at">Issued date</Label>
-                                    <Input
-                                        id="issued_at"
-                                        type="date"
-                                        value={data.issued_at}
-                                        onChange={(e) => setData('issued_at', e.target.value)}
-                                    />
+                                    <Label htmlFor="certification_id">Certification</Label>
+                                    <Select
+                                        value={data.certification_id}
+                                        onValueChange={(value) => setData('certification_id', value)}
+                                    >
+                                        <SelectTrigger id="certification_id">
+                                            <SelectValue placeholder="Choose a certification" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            {certifications.map((certification) => (
+                                                <SelectItem key={certification.id} value={String(certification.id)}>
+                                                    {certification.name}
+                                                </SelectItem>
+                                            ))}
+                                        </SelectContent>
+                                    </Select>
+                                    <InputError message={errors.certification_id} />
                                 </div>
+
                                 <div className="grid gap-2">
-                                    <Label htmlFor="expires_at">Expires date</Label>
+                                    <Label htmlFor="certificate_number">Certificate number</Label>
                                     <Input
-                                        id="expires_at"
-                                        type="date"
-                                        value={data.expires_at}
-                                        onChange={(e) => setData('expires_at', e.target.value)}
+                                        id="certificate_number"
+                                        value={data.certificate_number}
+                                        onChange={(e) => setData('certificate_number', e.target.value)}
+                                        placeholder="e.g. AWS-12345-XYZ"
+                                        maxLength={255}
                                     />
+                                    <InputError message={errors.certificate_number} />
                                 </div>
-                            </div>
 
-                            <div className="grid gap-2">
-                                <Label htmlFor="document">Document (PDF or image)</Label>
-                                <Input
-                                    id="document"
-                                    type="file"
-                                    accept="application/pdf,image/png,image/jpeg"
-                                    onChange={(e) => setData('document', e.target.files?.[0] ?? null)}
-                                />
-                            </div>
+                                <div className="grid grid-cols-2 gap-4">
+                                    <div className="grid gap-2">
+                                        <Label htmlFor="issued_at">Issued date</Label>
+                                        <Input
+                                            id="issued_at"
+                                            type="date"
+                                            max={new Date().toISOString().split('T')[0]}
+                                            value={data.issued_at}
+                                            onChange={(e) => setData('issued_at', e.target.value)}
+                                        />
+                                        <InputError message={errors.issued_at} />
+                                    </div>
+                                    <div className="grid gap-2">
+                                        <Label htmlFor="expires_at">Expires date</Label>
+                                        <Input
+                                            id="expires_at"
+                                            type="date"
+                                            min={data.issued_at || undefined}
+                                            value={data.expires_at}
+                                            onChange={(e) => setData('expires_at', e.target.value)}
+                                        />
+                                        <InputError message={errors.expires_at} />
+                                    </div>
+                                </div>
 
-                            <div className="grid gap-2">
-                                <Label htmlFor="note">Note for HR (optional)</Label>
-                                <textarea
-                                    id="note"
-                                    className="min-h-12 w-full rounded-md border bg-transparent px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-ring"
-                                    value={data.note}
-                                    onChange={(e) => setData('note', e.target.value)}
-                                />
-                            </div>
+                                <div className="grid gap-2">
+                                    <Label htmlFor="document">Document (PDF or image, max 4MB)</Label>
+                                    <Input
+                                        id="document"
+                                        type="file"
+                                        accept="application/pdf,image/png,image/jpeg"
+                                        onChange={(e) => setData('document', e.target.files?.[0] ?? null)}
+                                    />
+                                    <InputError message={errors.document} />
+                                </div>
 
-                            {errors.certification_id && (
-                                <p className="text-sm text-red-600">{errors.certification_id}</p>
-                            )}
+                                <div className="grid gap-2">
+                                    <Label htmlFor="note">Note for HR (optional)</Label>
+                                    <textarea
+                                        id="note"
+                                        className="min-h-12 w-full rounded-md border bg-transparent px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-ring"
+                                        value={data.note}
+                                        onChange={(e) => setData('note', e.target.value)}
+                                        placeholder="Any additional context for this request…"
+                                        maxLength={1000}
+                                    />
+                                    <InputError message={errors.note} />
+                                </div>
 
-                            <Button onClick={submitRequest} disabled={processing}>
-                                {processing ? 'Submitting…' : 'Submit for approval'}
-                            </Button>
+                                <Button type="submit" disabled={processing}>
+                                    {processing ? 'Submitting…' : 'Submit for approval'}
+                                </Button>
+                            </form>
                         </CardContent>
                     </Card>
 
@@ -187,7 +206,7 @@ export default function PortalCertifications() {
                                         <p className="text-muted-foreground">
                                             {certification.issuer ?? '—'}
                                             {certification.certificate?.expires_at
-                                                ? ` · expires ${certification.certificate.expires_at}`
+                                                ? ` · expires ${formatDate(certification.certificate.expires_at)}`
                                                 : ''}
                                         </p>
                                     </div>

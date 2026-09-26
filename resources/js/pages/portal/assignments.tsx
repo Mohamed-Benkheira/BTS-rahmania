@@ -6,6 +6,7 @@ import {
     CardHeader,
     CardTitle,
 } from '@/components/ui/card';
+import { formatDate } from '@/lib/utils';
 
 type Assignment = {
     id: number;
@@ -73,7 +74,7 @@ export default function PortalAssignments() {
                                     </CardTitle>
                                     <p className="text-sm text-muted-foreground">
                                         {humanize(assignment.assignment_type)} assignment ·{' '}
-                                        {assignment.start_date} → {assignment.end_date}
+                                        {formatDate(assignment.start_date)} → {formatDate(assignment.end_date)}
                                     </p>
                                 </div>
                                 <Badge

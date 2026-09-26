@@ -7,6 +7,7 @@ use App\Http\Controllers\Controller;
 use App\Services\ProfileChangeRequestService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -30,18 +31,32 @@ class ProfileController extends Controller
     public function store(Request $request): RedirectResponse
     {
         $validated = $request->validate([
-            'phone' => ['nullable', 'string', 'max:255'],
+            'phone' => ['nullable', 'string', 'max:30', 'regex:/^([+]?[0-9\s\-().]{6,30})?$/'],
             'biography' => ['nullable', 'string', 'max:2000'],
-            'birth_date' => ['nullable', 'date'],
+            'birth_date' => ['nullable', 'date', 'before:today'],
+            'note' => ['nullable', 'string', 'max:1000'],
+        ], [
+            'phone.regex' => 'The phone number format is invalid.',
+            'birth_date.before' => 'The birth date must be a date in the past.',
         ]);
 
-        $payload = array_filter($validated, fn ($value) => $value !== null);
+        $payload = array_filter([
+            'phone' => $validated['phone'] ?? null,
+            'biography' => $validated['biography'] ?? null,
+            'birth_date' => $validated['birth_date'] ?? null,
+        ], fn ($value) => $value !== null && $value !== '');
+
+        if (empty($payload)) {
+            throw ValidationException::withMessages([
+                'phone' => 'Please provide at least one field to update (phone, birth date, or biography).',
+            ]);
+        }
 
         app(ProfileChangeRequestService::class)->submit(
             employee: $request->user()->employee,
             type: ProfileChangeType::Profile,
             payload: $payload,
-            note: $request->input('note'),
+            note: $validated['note'] ?? null,
             actor: $request->user(),
         );
 

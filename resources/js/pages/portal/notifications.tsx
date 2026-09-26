@@ -7,6 +7,7 @@ import {
     CardTitle,
 } from '@/components/ui/card';
 import { readAll } from '@/routes/portal/notifications';
+import { formatDate, formatDateTime } from '@/lib/utils';
 
 type NotificationItem = {
     id: string;
@@ -37,7 +38,7 @@ function titleFor(data: Record<string, unknown>): string {
     }
 
     if (data.certification_name) {
-        const expires = data.expires_at ? ` expiring ${String(data.expires_at)}` : '';
+        const expires = data.expires_at ? ` expiring ${formatDate(data.expires_at)}` : '';
 
         return `Certification${expires}: ${String(data.certification_name)}`;
     }
@@ -104,7 +105,7 @@ export default function PortalNotifications() {
                                     )}
                                 </div>
                                 <span className="text-xs text-muted-foreground">
-                                    {notification.created_at}
+                                    {formatDateTime(notification.created_at)}
                                 </span>
                             </CardHeader>
                         </Card>

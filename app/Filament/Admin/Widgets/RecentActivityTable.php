@@ -73,7 +73,7 @@ class RecentActivityTable extends TableWidget
             'project.deleted' => 'Project deleted',
             'role.updated' => 'Role updated',
             'user.roles.updated' => 'Roles updated',
-            default => ucfirst(str_replace('_', ' ', $action)),
+            default => ucfirst(str_replace(['_', '.'], ' ', $action)),
         };
     }
 
@@ -135,12 +135,12 @@ class RecentActivityTable extends TableWidget
             return $name !== '' ? $name : null;
         }
 
-        if (str_starts_with($action, 'project.')) {
-            return $values['name'] ?? null;
+        if (isset($values['name']) && is_string($values['name'])) {
+            return $values['name'];
         }
 
         if (str_starts_with($action, 'role.') || str_starts_with($action, 'user.')) {
-            return $values['name'] ?? $values['email'] ?? null;
+            return $values['email'] ?? null;
         }
 
         return null;

@@ -76,6 +76,7 @@ class RolesAndPermissionsSeeder extends Seeder
             'create roles',
             'update roles',
             'delete roles',
+            'view audit logs',
         ];
 
         foreach ($permissions as $permission) {
@@ -103,6 +104,7 @@ class RolesAndPermissionsSeeder extends Seeder
             'view profile change requests', 'approve profile change requests',
             'view users', 'create users', 'update users',
             'view roles', 'update roles',
+            'view audit logs',
         ]);
 
         $hr->syncPermissions([

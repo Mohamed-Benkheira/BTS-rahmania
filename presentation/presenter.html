@@ -1,0 +1,617 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Presenter Console — Djezzy BTS Project Defense</title>
+  <style>
+    :root {
+      --bg-page: #f1f5f9;
+      --card-bg: #ffffff;
+      --border-color: #e2e8f0;
+      --red: #e30613;
+      --red-hover: #b8050f;
+      --blue: #0284c7;
+      --text: #0f172a;
+      --text-muted: #64748b;
+      --cue-bg: #fffbeb;
+      --cue-border: #f59e0b;
+      --cue-text: #92400e;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background: var(--bg-page);
+      color: var(--text);
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+    header {
+      background: #ffffff;
+      border-bottom: 1px solid var(--border-color);
+      padding: 0.75rem 1.5rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+      z-index: 10;
+    }
+    .header-left {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+    }
+    .badge {
+      font-size: 0.85rem;
+      font-weight: 800;
+      text-transform: uppercase;
+      padding: 0.35rem 0.85rem;
+      border-radius: 9999px;
+      letter-spacing: 0.04em;
+    }
+    .badge.kamal { 
+      background: rgba(227, 6, 19, 0.1); 
+      color: var(--red); 
+      border: 1.5px solid rgba(227, 6, 19, 0.3); 
+    }
+    .badge.amine { 
+      background: rgba(2, 132, 199, 0.1); 
+      color: var(--blue); 
+      border: 1.5px solid rgba(2, 132, 199, 0.3); 
+    }
+    .timer-container {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      font-family: monospace;
+      font-size: 1.6rem;
+      font-weight: 800;
+      color: var(--blue);
+    }
+    .btn {
+      background: #f8fafc;
+      border: 1px solid var(--border-color);
+      color: var(--text);
+      padding: 0.45rem 0.9rem;
+      border-radius: 8px;
+      cursor: pointer;
+      font-weight: 700;
+      font-size: 0.85rem;
+      transition: all 0.2s ease;
+    }
+    .btn:hover { 
+      background: #e2e8f0; 
+      border-color: #cbd5e1;
+    }
+    .btn.red { 
+      background: var(--red); 
+      color: #ffffff;
+      border-color: transparent; 
+    }
+    .btn.red:hover {
+      background: var(--red-hover);
+    }
+    main {
+      flex: 1;
+      display: grid;
+      grid-template-columns: 440px 1fr;
+      gap: 1.25rem;
+      padding: 1.25rem;
+      overflow: hidden;
+    }
+    .previews-column {
+      display: flex;
+      flex-direction: column;
+      gap: 1.25rem;
+      height: 100%;
+    }
+    .preview-box {
+      flex: 1;
+      background: var(--card-bg);
+      border: 1px solid var(--border-color);
+      border-radius: 14px;
+      padding: 1.2rem;
+      display: flex;
+      flex-direction: column;
+      box-shadow: 0 4px 12px rgba(15, 23, 42, 0.04);
+      overflow: hidden;
+    }
+    .preview-header {
+      font-size: 0.85rem;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      font-weight: 800;
+      letter-spacing: 0.05em;
+      margin-bottom: 0.5rem;
+    }
+    .preview-title {
+      font-size: 1.35rem;
+      font-weight: 800;
+      color: var(--text);
+      line-height: 1.3;
+    }
+    .notes-column {
+      background: var(--card-bg);
+      border: 1px solid var(--border-color);
+      border-radius: 14px;
+      padding: 1.8rem 2.2rem;
+      display: flex;
+      flex-direction: column;
+      box-shadow: 0 4px 12px rgba(15, 23, 42, 0.04);
+      overflow-y: auto;
+    }
+    .notes-heading {
+      font-size: 0.95rem;
+      text-transform: uppercase;
+      color: var(--red);
+      font-weight: 900;
+      letter-spacing: 0.06em;
+      margin-bottom: 1.2rem;
+      padding-bottom: 0.6rem;
+      border-bottom: 2px solid var(--border-color);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .notes-body {
+      font-size: 1.45rem;
+      line-height: 1.8;
+      color: var(--text);
+      font-weight: 500;
+      flex: 1;
+    }
+    .action-cue {
+      display: block;
+      background: #fef2f2;
+      color: #b91c1c;
+      border: 1.5px solid #fca5a5;
+      border-radius: 8px;
+      padding: 0.45rem 0.9rem;
+      font-weight: 800;
+      font-family: monospace;
+      font-size: 1.1rem;
+      margin: 0.75rem 0;
+      box-shadow: 0 2px 4px rgba(220, 38, 38, 0.06);
+    }
+    .slide-indicator {
+      display: inline-block;
+      background: #f0fdf4;
+      color: #15803d;
+      border: 1.5px solid #86efac;
+      border-radius: 6px;
+      padding: 0.2rem 0.6rem;
+      font-weight: 800;
+      font-size: 0.95rem;
+      margin-right: 0.5rem;
+    }
+    .note-block {
+      padding: 0.65rem 0.95rem;
+      border-radius: 8px;
+      border-left: 3px solid transparent;
+      margin-bottom: 0.75rem;
+      transition: all 0.2s ease;
+    }
+    .note-block.active-step-block {
+      background: #fef2f2;
+      border-left: 4px solid var(--red);
+      box-shadow: 0 2px 8px rgba(227, 6, 19, 0.08);
+    }
+    .cues-box {
+      margin-top: 1.25rem;
+      background: var(--cue-bg);
+      border: 1.5px solid var(--cue-border);
+      border-radius: 10px;
+      padding: 1rem 1.4rem;
+      font-size: 1.15rem;
+      color: var(--cue-text);
+      font-weight: 700;
+      line-height: 1.5;
+    }
+    footer {
+      background: #ffffff;
+      border-top: 1px solid var(--border-color);
+      padding: 0.75rem 1.5rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      box-shadow: 0 -1px 3px rgba(0, 0, 0, 0.03);
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="header-left">
+      <span style="font-weight:900; color:var(--red); font-size:1.1rem; letter-spacing:0.04em;">DJEZZY DEFENSE CONSOLE</span>
+      <span id="speakerBadge" class="badge kamal">Kamal</span>
+      <span style="font-family:monospace; font-weight:700; color:var(--text-muted);" id="slideCounter">Slide 1 / 16</span>
+      <span style="font-family:monospace; font-size:0.95rem; font-weight:700; color:var(--blue);" id="stepCounter">Step 1</span>
+    </div>
+    <div class="timer-container">
+      <span id="timerDisplay">00:00</span>
+      <button id="toggleTimerBtn" class="btn">Start</button>
+      <button id="resetTimerBtn" class="btn">Reset</button>
+    </div>
+  </header>
+
+  <main>
+    <div class="previews-column">
+      <div class="preview-box">
+        <div class="preview-header">Current Slide</div>
+        <div id="currentSlideTitle" class="preview-title">Slide 1: Title & Presentation</div>
+        <div id="currentSlideSub" style="font-size:0.95rem; color:var(--text-muted); margin-top:0.4rem; font-weight:600;">Overview & Three Logos</div>
+      </div>
+      <div class="preview-box">
+        <div class="preview-header">Next Up</div>
+        <div id="nextSlideTitle" class="preview-title" style="color:var(--text-muted);">Slide 2: The Problem</div>
+        <div id="nextSlideSpeaker" style="font-size:0.95rem; color:var(--blue); margin-top:0.4rem; font-weight:700;">Speaker: Kamal</div>
+      </div>
+    </div>
+
+    <div class="notes-column">
+      <div class="notes-heading">
+        <span>Spoken Pitch &bull; Synchronized Paragraphs</span>
+        <span style="font-size:0.8rem; font-weight:700; color:var(--text-muted); text-transform:none;">Each fragment lights up with your next click</span>
+      </div>
+      <div id="notesText" class="notes-body">
+        Loading speaker notes...
+      </div>
+      <div class="cues-box" id="cuesText">
+        Remind: Speak slowly, use simple words, make eye contact with the jury.
+      </div>
+    </div>
+  </main>
+
+  <footer>
+    <div style="font-size:0.9rem; color:var(--text-muted); font-weight:600;">
+      Controls: <kbd style="background:#e2e8f0; padding:2px 6px; border-radius:4px; font-weight:700;">Space</kbd> / <kbd style="background:#e2e8f0; padding:2px 6px; border-radius:4px; font-weight:700;">&rarr;</kbd> Next Step &bull; <kbd style="background:#e2e8f0; padding:2px 6px; border-radius:4px; font-weight:700;">&larr;</kbd> Prev &bull; Synced with main screen
+    </div>
+    <div style="display:flex; gap:0.75rem;">
+      <button id="prevBtn" class="btn">Previous Step / Slide</button>
+      <button id="nextBtn" class="btn red">Next Step / Slide</button>
+    </div>
+  </footer>
+
+  <script>
+    const slidesData = [
+      {
+            "speaker": "Brahimi Mohamed Amine",
+            "badge": "amine",
+            "title": "Slide 1: Title & Defense Opening",
+            "sub": "Design & Implementation \u2022 Djezzy Case Study",
+            "cue": "Target: 45 seconds. Speak with a warm, calm, and confident tone.",
+            "notes": "Good afternoon, Madame President, and members of the jury. I am Brahimi Mohamed Amine, and with my project partner Benkheira Mohamed Kamal, we present our graduation project: the Design and Implementation of a Resource Assignment and Allocation Platform for Djezzy \u2014 Case Study: IT and HR Departments. This project was supervised by Mme Krim at INSFP Rahmania, and M. Ali Bouras at Djezzy. We are pleased to present our work to you today."
+      },
+      {
+            "speaker": "Brahimi Mohamed Amine",
+            "badge": "amine",
+            "title": "Slide 2: The Problem: Manual Staffing",
+            "sub": "Djezzy Scale vs Spreadsheets and Emails",
+            "cue": "Target: 60 seconds. Advance step-by-step: each click reveals the next problem as you explain it.",
+            "notes": "Djezzy is a major telecommunications operator with over 18 million mobile subscribers and more than 300 technical engineers. Before our project, assigning staff to engineering projects was handled manually through scattered Excel spreadsheets, endless email threads, and personal memory.\n\nThis created our first major operational breakdown: finding the right skills was difficult. Project managers had no central directory to search for specific technical competencies, database proficiencies, or certifications across different teams.\n\nSecond was staff overload. Without real-time workload visibility, some engineers were accidentally booked on two or three projects simultaneously, exceeding 100% capacity and creating severe delivery delays.\n\nThird was the absence of decision history. There was no audit trail showing who requested an assignment, who approved it, or why an engineer was replaced, making accountability impossible.\n\nFinally, employee profiles quickly became outdated. Engineers had no self-service channel to submit newly acquired certifications or diplomas, leaving HR records weeks or months behind reality."
+      },
+      {
+            "speaker": "Brahimi Mohamed Amine",
+            "badge": "amine",
+            "title": "Slide 3: Project Objectives",
+            "sub": "Centralize, Automate, Govern, Empower",
+            "cue": "Target: 50 seconds. Advance through each of the four objective cards.",
+            "notes": "To solve these operational breakdowns, we established four clear project objectives. Our first objective is to Centralize: create a single, unified database holding verified profiles, technical skills, certifications, and availability for all 300 technical staff.\n\nOur second objective is to Automate: implement an intelligent matching algorithm that evaluates candidate competencies and free hours against project needs to recommend the best candidates.\n\nOur third objective is to Govern: establish structured validation workflows and an immutable audit log so every staffing allocation requires formal managerial authorization.\n\nOur fourth objective is to Empower: give employees a dedicated self-service web portal where they can check their assigned projects, view their workload, and submit verified certificates."
+      },
+      {
+            "speaker": "Brahimi Mohamed Amine",
+            "badge": "amine",
+            "title": "Slide 4: Our Solution: Two Dedicated Interfaces",
+            "sub": "Filament Back-Office + React 19 Portal",
+            "cue": "Target: 50 seconds. Compare the manager back-office with the employee portal.",
+            "notes": "Rather than creating a single cluttered application, we designed two dedicated spaces tailored to each user type. For managers and HR personnel, we built an administrative back-office using Laravel Filament to manage projects, run the candidate matching engine, and approve staff requests.\n\nFor the 300 technical employees, we built a modern React web portal. Through this portal, engineers can view their active project assignments, monitor their workload in real time, and submit new certificates directly to HR."
+      },
+      {
+            "speaker": "Brahimi Mohamed Amine",
+            "badge": "amine",
+            "title": "Slide 5: User Roles & Access Control",
+            "sub": "6 Roles & Separation of Duties",
+            "cue": "Target: 60 seconds. Advance through the three role cards to the separation-of-duties rule.",
+            "notes": "To maintain strict security and accountability, we organized users into six distinct roles. Our System Administrators include the super-admin, who maintains global system configuration and role permissions, and the admin, who oversees project operations and approves staff allocations.\n\nNext, our Department Managers include HR officers, who verify employee certificates and approve skill updates, and Resource Managers, who supervise department staffing levels and team structures.\n\nFor project execution, Project Managers define initiative requirements and request candidate allocations, while Employees access their portal to view assigned tasks and manage their personal profiles.\n\nOur primary governance rule is Separation of Duties: Project Managers can search and propose candidates, but only an Administrator or HR officer can approve the booking. This prevents bias and eliminates accidental double-booking."
+      },
+      {
+            "speaker": "Brahimi Mohamed Amine",
+            "badge": "amine",
+            "title": "Slide 6: Core Workflows: How Work Moves",
+            "sub": "Assignment State Machine & Profile Verification Loop",
+            "cue": "Target: 75 seconds. Each click lights up the next status pill in sharp focus.",
+            "notes": "Our platform structures daily operations into two automated workflows. The first is Workflow 1: The Assignment Lifecycle. It begins in the PENDING state: when a Project Manager needs technical staff, they select qualified candidates from the recommendation engine and create a draft staffing proposal.\n\nNext is the APPROVED state. To enforce our separation-of-duties policy, an HR administrator reviews the proposed candidates, verifies that no engineer exceeds 100% capacity, and officially authorizes the assignment.\n\nThird is the ACTIVE state. When the project's calendar start date arrives, the system automatically transitions the assignment to active. The engineers are officially committed to the project, and their capacity is locked in real time.\n\nFourth is the COMPLETED state. Once project deliverables are completed and signed off, the assignment is marked finished. The engineers are immediately released back to full availability, and the entire history is permanently saved in the audit log.\n\nBelow is our second process: the Profile and Certificate Verification Loop. When an employee uploads a new PDF diploma through their portal, it enters a verification queue. An HR administrator inspects the document, approves the update, and the employee's skills are instantly updated across the platform. Now, my partner Benkheira Mohamed Kamal will present our technical architecture."
+      },
+      {
+            "speaker": "Benkheira Mohamed Kamal",
+            "badge": "kamal",
+            "title": "Slide 7: Application Architecture: How It Works",
+            "sub": "3-Tier Architecture: Browser, Server, Database",
+            "cue": "Target: 60 seconds. Advance step-by-step: Browser -> Server -> Database.",
+            "notes": "Thank you, Mohamed Amine. Now, let us examine how the system is engineered. We selected a proven 3-tier architecture. On the client tier, users interact with the system through standard web browsers: managers access the Filament back-office, while employees use our React 19 single-page application.\n\nOn the application tier, our backend runs on Laravel 11 and PHP 8.3. It coordinates all business logic, permission rules, and workflow state transitions. We use Inertia.js to seamlessly transmit data between Laravel and React without maintaining duplicate API endpoints.\n\nOn the database tier, PostgreSQL 16 stores all relational company data across 44 tables. We enforce business constraints, relationship integrity, and assignment rules directly inside the PostgreSQL engine to guarantee complete reliability."
+      },
+      {
+            "speaker": "Benkheira Mohamed Kamal",
+            "badge": "kamal",
+            "title": "Slide 8: Database Design & Relational Rigor",
+            "sub": "44 Tables & PostgreSQL Partial Unique Index",
+            "cue": "Target: 55 seconds. Highlight the partial unique index as bulletproof database safety.",
+            "notes": "Our database schema is structured into 44 relational tables grouped into four main modules: organizational structure, employee profiles and skills, project tracking and assignments, and governance audit logs. Foreign keys enforce data integrity across all relationships.\n\nA central technical achievement in our database is a PostgreSQL partial unique index on assignments. It guarantees at the database engine level that a project can have only one active assignment at any time, while preserving all historical records. Even if two managers submit simultaneous approvals, the database prevents any duplicate booking."
+      },
+      {
+            "speaker": "Benkheira Mohamed Kamal",
+            "badge": "kamal",
+            "title": "Slide 9: Key Feature: The Recommendation Engine",
+            "sub": "Weighted Matching Formula & Blockers",
+            "cue": "Target: 65 seconds. Advance through Formula -> Engine Factors -> Safeguards.",
+            "notes": "Our most important algorithmic feature is the Recommendation Engine. When a manager needs staff, the engine scores all eligible candidates out of 100 points: 40 points for required technical skills, 20 points for verified certifications, 15 for languages, 15 for schedule availability, and 10 for free workload capacity.\n\nThe engine checks proficiency levels from one to five, validates that certificates are current and verified, matches working dates against the project timeline, and prioritizes engineers who have available hours.\n\nThe engine also enforces strict safety blockers. If a candidate is already at 100% capacity or lacks a mandatory project certification, they are excluded from the candidate pool. The manager can then assign the top-ranked engineer with a single click."
+      },
+      {
+            "speaker": "Benkheira Mohamed Kamal",
+            "badge": "kamal",
+            "title": "Slide 10: Security & Complete Audit Trail",
+            "sub": "Passkeys, 2FA, and Before/After Event Logs",
+            "cue": "Target: 60 seconds. Advance through Passkeys, 2FA, Audit Trail, to Sample Event.",
+            "notes": "Enterprise telecom systems require rigorous security. First, we implemented FIDO2 Passkeys, enabling passwordless authentication using biometric sensors such as fingerprint readers, Windows Hello, or physical security keys for strong protection against phishing.\n\nSecond, we built time-based two-factor authentication. Users can pair authenticator apps like Google or Microsoft Authenticator to generate 6-digit TOTP codes, and receive emergency recovery codes.\n\nThird, we developed a complete audit log system. Every critical action\u2014such as approving staff or updating a project\u2014automatically captures the user ID, IP address, timestamp, and a before-and-after JSON snapshot of the changed data.\n\nHere in our audit log display, when an administrator approves an assignment, the system records the exact transition from pending to approved under a permanent audit ID for complete transparency. Now, Mohamed Amine will demonstrate the live application screens."
+      },
+      {
+            "speaker": "Brahimi Mohamed Amine",
+            "badge": "amine",
+            "title": "Slide 11: Application Demo: Employee Portal",
+            "sub": "React 19 Frontend at /portal/*",
+            "cue": "Target: 55 seconds. Advance through Dashboard -> Request Modal -> Key Highlights.",
+            "notes": "Thank you, Mohamed Kamal. Now let us examine the live application screens. Here is the Employee Self-Service Portal built with React 19. The main dashboard gives employees a clear view of their active project assignments, their current workload percentage, and upcoming milestone dates.\n\nWhen an employee earns a new technical certification, they open this Request Modal to enter the details and upload their PDF verification document. The upload is securely staged for HR inspection.\n\nThe portal ensures employees always have clear visibility over their workload, provides document proof for every registered skill, and delivers instant notifications whenever a request is approved."
+      },
+      {
+            "speaker": "Brahimi Mohamed Amine",
+            "badge": "amine",
+            "title": "Slide 12: Application Demo: Manager Back-Office",
+            "sub": "Filament 5 Matching Modal & HR Approval",
+            "cue": "Target: 55 seconds. Advance through Recommendation Modal -> HR Verification -> Key Highlights.",
+            "notes": "Next is the Manager Back-Office built with Filament. When a Project Manager needs engineers, this Recommendation Modal displays automatically scored candidates ranked by match percentage, showing their skills and available hours.\n\nOn the HR administration side, officers inspect submitted employee requests, review the attached certificate documents, and approve or reject the update with a single click.\n\nThis back-office eliminates manual spreadsheet tracking, provides one-click staff assignments, and guarantees that every skill update is verified before entering the corporate database. Now, Mohamed Kamal will walk through the technical challenges and software quality."
+      },
+      {
+            "speaker": "Benkheira Mohamed Kamal",
+            "badge": "kamal",
+            "title": "Slide 13: Technical Challenges & How We Solved Them",
+            "sub": "4 Concrete Problems Solved",
+            "cue": "Target: 70 seconds. Step through each of the four challenge cards one by one.",
+            "notes": "Thank you, Mohamed Amine. During development, we solved four concrete engineering challenges. First, we needed to permit only one active assignment per project while retaining full historical records. A standard UNIQUE constraint would delete past history, so we implemented a PostgreSQL partial unique index filtering only approved and active records.\n\nSecond, building an independent REST API for React would have doubled our validation rules and data models. We used Inertia.js to connect Laravel controllers directly to React components without maintaining duplicate API endpoints.\n\nThird, calculating match scores across 300 employee profiles initially caused slow database queries. We solved this by pre-filtering inactive records in SQL and eager-loading skills and certificates in a single efficient query.\n\nFourth, circular database references between departments and managers caused migration deadlocks. We resolved this by creating tables first, and attaching relational foreign keys in a dedicated second migration."
+      },
+      {
+            "speaker": "Benkheira Mohamed Kamal",
+            "badge": "kamal",
+            "title": "Slide 14: Testing & Software Quality",
+            "sub": "124 PHPUnit Tests & 492 Assertions (100% Pass)",
+            "cue": "Target: 50 seconds. Highlight 124 tests / 492 assertions, then test execution speed.",
+            "notes": "To ensure system reliability, we implemented comprehensive automated testing. We developed 124 PHPUnit tests with 492 assertions, validating recommendation math, workflow state transitions, and role-based permissions with a 100% pass rate.\n\nOur entire test suite runs in under three seconds with zero failures. We also enforce code cleanliness using Laravel Pint for PSR-12 standard compliance and PHPStan at Level 5 to catch errors before deployment."
+      },
+      {
+            "speaker": "Benkheira Mohamed Kamal",
+            "badge": "kamal",
+            "title": "Slide 15: Current Limits & Future Improvements",
+            "sub": "Honest Evaluation & Next Steps",
+            "cue": "Target: 50 seconds. Contrast current boundaries with concrete future improvements.",
+            "notes": "In engineering, evaluating system limits is just as important as showing features. Today, our matching formula uses fixed percentage weights, notification updates refresh every 30 seconds through polling, and mobile access is provided via responsive web browsing rather than a native mobile application.\n\nLooking forward, three key enhancements are planned: training machine learning models on post-project evaluations to dynamically tune matching weights, adding real-time WebSockets via Laravel Reverb for instant push alerts, and developing a dedicated cross-platform mobile app."
+      },
+      {
+            "speaker": "Amine & Kamal",
+            "badge": "amine",
+            "title": "Slide 16: Conclusion & Jury Q&A",
+            "sub": "Final Wrap-up & Open Discussion",
+            "cue": "Target: 40 seconds. Both presenters stand together and invite jury questions.",
+            "notes": "In conclusion, we designed and implemented a production-ready resource assignment platform tailored to Djezzy's real operational needs. We validated our solution through 124 passing automated tests, clear workflows, and strict database integrity rules.\n\nThis graduation project provided us with invaluable practical experience in full-stack development, database architecture, and agile teamwork. We thank Madame President and members of the jury for your kind attention, and we are now ready to answer your questions."
+      }
+];
+
+    // Step counts per slide matching index.html
+    const slideSteps = [0, 5, 4, 2, 4, 5, 3, 2, 3, 4, 3, 3, 4, 2, 2, 0];
+
+    let currentSlide = 0;
+    let currentStep = 1;
+    const channel = new BroadcastChannel('bts_defense_channel');
+
+    let pendingActionTimer = null;
+    let lastRenderedStateKey = '';
+
+    function sendAction(action) {
+      const actionPayload = { 
+        action: action, 
+        id: Date.now() + '_' + Math.floor(Math.random() * 100000),
+        timestamp: Date.now() 
+      };
+      if (channel) {
+        channel.postMessage(actionPayload);
+      }
+      try {
+        localStorage.setItem('bts_presenter_action', JSON.stringify(actionPayload));
+      } catch (e) {}
+    }
+
+    function handleNext() {
+      sendAction('next');
+
+      // Standalone fallback: if main window is not connected, advance locally after 120ms
+      clearTimeout(pendingActionTimer);
+      pendingActionTimer = setTimeout(() => {
+        const maxSteps = slideSteps[currentSlide] || 0;
+        if (maxSteps > 0 && currentStep < maxSteps) {
+          currentStep++;
+          renderSlide(currentSlide, currentStep);
+        } else {
+          if (currentSlide < slidesData.length - 1) {
+            currentSlide++;
+            currentStep = (slideSteps[currentSlide] > 0) ? 1 : 0;
+            renderSlide(currentSlide, currentStep);
+          }
+        }
+      }, 120);
+    }
+
+    function handlePrev() {
+      sendAction('prev');
+
+      // Standalone fallback: if main window is not connected, rewind locally after 120ms
+      clearTimeout(pendingActionTimer);
+      pendingActionTimer = setTimeout(() => {
+        if (currentStep > 1) {
+          currentStep--;
+          renderSlide(currentSlide, currentStep);
+        } else {
+          if (currentSlide > 0) {
+            currentSlide--;
+            const prevSteps = slideSteps[currentSlide] || 0;
+            currentStep = prevSteps > 0 ? prevSteps : 0;
+            renderSlide(currentSlide, currentStep);
+          }
+        }
+      }, 120);
+    }
+
+    function renderSlide(index, step = 1) {
+      if (index < 0 || index >= slidesData.length) return;
+      currentSlide = index;
+      currentStep = step;
+      const s = slidesData[index];
+      const nextS = slidesData[index + 1];
+      const maxSteps = slideSteps[index] || 0;
+
+      document.getElementById('slideCounter').textContent = `Slide ${index + 1} / ${slidesData.length}`;
+      document.getElementById('stepCounter').textContent = maxSteps > 0 ? `Step ${step} / ${maxSteps}` : `Complete Slide`;
+      document.getElementById('speakerBadge').textContent = s.badge === 'kamal' ? 'Kamal' : (s.badge === 'amine' ? 'Amine' : 'Kamal & Amine');
+      document.getElementById('speakerBadge').className = `badge ${s.badge}`;
+      
+      document.getElementById('currentSlideTitle').textContent = s.title;
+      document.getElementById('currentSlideSub').textContent = s.sub;
+      
+      if (nextS) {
+        document.getElementById('nextSlideTitle').textContent = nextS.title;
+        document.getElementById('nextSlideSpeaker').textContent = `Speaker: ${nextS.speaker}`;
+      } else {
+        document.getElementById('nextSlideTitle').textContent = 'End of Presentation';
+        document.getElementById('nextSlideSpeaker').textContent = 'Jury Q&A Session';
+      }
+
+      // Format notes into step-aware paragraph fragments with active step highlighting
+      const paragraphs = s.notes.split(/\n\n+/);
+      let formattedHtml = '';
+      
+      paragraphs.forEach((p, pIdx) => {
+        const text = p.trim().replace(/\n/g, '<br>');
+
+        // Check if this paragraph corresponds to the current step
+        const isCurrentStep = (maxSteps > 1) ? (pIdx === (step - 1)) : true;
+        const blockClass = isCurrentStep ? 'note-block active-step-block' : 'note-block';
+        
+        formattedHtml += `<div class="${blockClass}">${text}</div>`;
+      });
+
+      const notesEl = document.getElementById('notesText');
+      notesEl.innerHTML = formattedHtml;
+      
+      // Auto-scroll to active step smoothly
+      const activeBlock = notesEl.querySelector('.active-step-block');
+      if (activeBlock) {
+        activeBlock.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      }
+
+      document.getElementById('cuesText').innerHTML = `<strong>Delivery Advice:</strong> ${s.cue}`;
+    }
+
+    function onStateReceived(slideIndex, stepIndex) {
+      clearTimeout(pendingActionTimer);
+      const stateKey = `${slideIndex}:${stepIndex}`;
+      if (stateKey === lastRenderedStateKey) return;
+      lastRenderedStateKey = stateKey;
+      renderSlide(slideIndex, stepIndex || 1);
+    }
+
+    channel.onmessage = (e) => {
+      if (e.data && typeof e.data.slideIndex === 'number') {
+        onStateReceived(e.data.slideIndex, e.data.stepIndex || 1);
+      }
+    };
+
+    window.addEventListener('storage', (e) => {
+      if (e.key === 'bts_current_state') {
+        try {
+          const state = JSON.parse(e.newValue);
+          if (state && typeof state.slideIndex === 'number') {
+            onStateReceived(state.slideIndex, state.stepIndex || 1);
+          }
+        } catch (err) {}
+      } else if (e.key === 'bts_current_slide') {
+        onStateReceived(parseInt(e.newValue, 10), 1);
+      }
+    });
+
+    // Request initial state sync on startup
+    sendAction('sync');
+
+    document.getElementById('nextBtn').addEventListener('click', handleNext);
+    document.getElementById('prevBtn').addEventListener('click', handlePrev);
+
+    // Keyboard navigation from presenter console
+    document.addEventListener('keydown', (e) => {
+      if (e.target && (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA')) return;
+      if (e.key === ' ' || e.key === 'ArrowRight' || e.key === 'ArrowDown' || e.key === 'PageDown') {
+        e.preventDefault();
+        handleNext();
+      } else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp' || e.key === 'PageUp') {
+        e.preventDefault();
+        handlePrev();
+      }
+    });
+
+    // Stopwatch Timer
+    let timerInterval = null;
+    let seconds = 0;
+    const timerDisplay = document.getElementById('timerDisplay');
+    const toggleTimerBtn = document.getElementById('toggleTimerBtn');
+    const resetTimerBtn = document.getElementById('resetTimerBtn');
+
+    function updateTimer() {
+      seconds++;
+      const m = Math.floor(seconds / 60).toString().padStart(2, '0');
+      const s = (seconds % 60).toString().padStart(2, '0');
+      timerDisplay.textContent = `${m}:${s}`;
+      if (seconds > 16 * 60) {
+        timerDisplay.style.color = '#e30613';
+      } else if (seconds > 13 * 60) {
+        timerDisplay.style.color = '#d97706';
+      } else {
+        timerDisplay.style.color = '#0284c7';
+      }
+    }
+
+    toggleTimerBtn.addEventListener('click', () => {
+      if (timerInterval) {
+        clearInterval(timerInterval);
+        timerInterval = null;
+        toggleTimerBtn.textContent = 'Resume';
+      } else {
+        timerInterval = setInterval(updateTimer, 1000);
+        toggleTimerBtn.textContent = 'Pause';
+      }
+    });
+
+    resetTimerBtn.addEventListener('click', () => {
+      clearInterval(timerInterval);
+      timerInterval = null;
+      seconds = 0;
+      timerDisplay.textContent = '00:00';
+      timerDisplay.style.color = '#0284c7';
+      toggleTimerBtn.textContent = 'Start';
+    });
+
+    // Initial load
+    const saved = localStorage.getItem('bts_current_slide');
+    if (saved !== null) {
+      renderSlide(parseInt(saved, 10), 1);
+    } else {
+      renderSlide(0, 1);
+    }
+  </script>
+</body>
+</html>

@@ -3,6 +3,7 @@
 namespace App\Providers;
 
 use App\Models\Assignment;
+use App\Models\AuditLog;
 use App\Models\BusinessUnit;
 use App\Models\Certification;
 use App\Models\Department;
@@ -19,8 +20,10 @@ use App\Models\SkillCategory;
 use App\Models\Team;
 use App\Models\User;
 use App\Observers\EmployeeObserver;
+use App\Observers\ModelAuditObserver;
 use App\Observers\ProjectObserver;
 use App\Policies\AssignmentPolicy;
+use App\Policies\AuditLogPolicy;
 use App\Policies\BusinessUnitPolicy;
 use App\Policies\CertificationPolicy;
 use App\Policies\DepartmentPolicy;
@@ -72,6 +75,19 @@ class AppServiceProvider extends ServiceProvider
     {
         Employee::observe(EmployeeObserver::class);
         Project::observe(ProjectObserver::class);
+        Department::observe(ModelAuditObserver::class);
+        BusinessUnit::observe(ModelAuditObserver::class);
+        Team::observe(ModelAuditObserver::class);
+        Position::observe(ModelAuditObserver::class);
+        Location::observe(ModelAuditObserver::class);
+        Skill::observe(ModelAuditObserver::class);
+        SkillCategory::observe(ModelAuditObserver::class);
+        Certification::observe(ModelAuditObserver::class);
+        Language::observe(ModelAuditObserver::class);
+        ProjectCategory::observe(ModelAuditObserver::class);
+        ProjectEvaluation::observe(ModelAuditObserver::class);
+        User::observe(ModelAuditObserver::class);
+        Role::observe(ModelAuditObserver::class);
     }
 
     /**
@@ -98,6 +114,7 @@ class AppServiceProvider extends ServiceProvider
         GateFacade::policy(Assignment::class, AssignmentPolicy::class);
         GateFacade::policy(ProjectEvaluation::class, ProjectEvaluationPolicy::class);
         GateFacade::policy(Recommendation::class, RecommendationPolicy::class);
+        GateFacade::policy(AuditLog::class, AuditLogPolicy::class);
         GateFacade::policy(User::class, UserPolicy::class);
         GateFacade::policy(Role::class, RolePolicy::class);
     }

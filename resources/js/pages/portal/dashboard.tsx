@@ -14,6 +14,7 @@ import {
     CardHeader,
     CardTitle,
 } from '@/components/ui/card';
+import { formatDate } from '@/lib/utils';
 import type { Employee } from '@/types';
 
 type Assignment = {
@@ -93,7 +94,9 @@ export default function PortalDashboard() {
                         </h1>
                         <p className="text-sm text-muted-foreground">
                             {employee.employee_code}
-                            {employee.position?.name ? ` · ${employee.position.name}` : ''}
+                            {employee.position?.title ?? employee.position?.name
+                                ? ` · ${employee.position.title ?? employee.position.name}`
+                                : ''}
                         </p>
                     </div>
                     <Button asChild>
@@ -166,7 +169,7 @@ export default function PortalDashboard() {
                                         </Badge>
                                     </div>
                                     <p className="text-sm text-muted-foreground">
-                                        {currentAssignment.start_date} → {currentAssignment.end_date}
+                                        {formatDate(currentAssignment.start_date)} → {formatDate(currentAssignment.end_date)}
                                     </p>
                                 </div>
                             ) : (

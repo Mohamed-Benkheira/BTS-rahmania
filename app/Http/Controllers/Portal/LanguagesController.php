@@ -8,6 +8,8 @@ use App\Models\Language;
 use App\Services\ProfileChangeRequestService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Validation\Rule;
+use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -33,18 +35,40 @@ class LanguagesController extends Controller
 
     public function store(Request $request): RedirectResponse
     {
-        $payload = $request->validate([
-            'speaking_level' => ['nullable', 'string', 'max:20'],
-            'writing_level' => ['nullable', 'string', 'max:20'],
-            'reading_level' => ['nullable', 'string', 'max:20'],
+        $allowedLevels = ['beginner', 'intermediate', 'advanced', 'native'];
+
+        $validated = $request->validate([
+            'language_id' => ['required', 'integer', 'exists:languages,id'],
+            'speaking_level' => ['nullable', 'string', Rule::in($allowedLevels)],
+            'writing_level' => ['nullable', 'string', Rule::in($allowedLevels)],
+            'reading_level' => ['nullable', 'string', Rule::in($allowedLevels)],
+            'note' => ['nullable', 'string', 'max:1000'],
+        ], [
+            'language_id.required' => 'Please select a language.',
+            'language_id.exists' => 'The selected language is invalid.',
+            'speaking_level.in' => 'Selected speaking level is invalid.',
+            'writing_level.in' => 'Selected writing level is invalid.',
+            'reading_level.in' => 'Selected reading level is invalid.',
         ]);
+
+        $payload = array_filter([
+            'speaking_level' => $validated['speaking_level'] ?? null,
+            'writing_level' => $validated['writing_level'] ?? null,
+            'reading_level' => $validated['reading_level'] ?? null,
+        ], fn ($val) => ! is_null($val) && $val !== '');
+
+        if (empty($payload)) {
+            throw ValidationException::withMessages([
+                'speaking_level' => 'Please select at least one proficiency level (speaking, writing, or reading).',
+            ]);
+        }
 
         app(ProfileChangeRequestService::class)->submit(
             employee: $request->user()->employee,
             type: ProfileChangeType::Language,
-            subjectId: (int) $request->input('language_id'),
+            subjectId: (int) $validated['language_id'],
             payload: $payload,
-            note: $request->input('note'),
+            note: $validated['note'] ?? null,
             actor: $request->user(),
         );
 

@@ -39,7 +39,8 @@ class ProfileChangeRequest extends Model
             'payload' => 'array',
             'previous' => 'array',
             'status' => ProfileChangeStatus::class,
-            'reviewed_at' => 'datetime',
+            'reviewed_at' => 'datetime:Y-m-d H:i',
+            'created_at' => 'datetime:Y-m-d H:i',
         ];
     }
 

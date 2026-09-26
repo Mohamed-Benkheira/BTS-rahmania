@@ -43,7 +43,13 @@ class HandleInertiaRequests extends Middleware
             'auth' => [
                 'user' => $user,
                 'roles' => $user?->getRoleNames()?->values()->all() ?? [],
-                'employee' => $user?->loadMissing('employee')?->employee,
+                'employee' => $user?->loadMissing([
+                    'employee.position',
+                    'employee.department',
+                    'employee.team',
+                    'employee.manager',
+                    'employee.businessUnit',
+                ])?->employee,
             ],
             'notifications' => [
                 'unread_count' => $user?->unreadNotifications()->count() ?? 0,

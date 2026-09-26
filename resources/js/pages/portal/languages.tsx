@@ -1,4 +1,5 @@
 import { Head, useForm, usePage } from '@inertiajs/react';
+import InputError from '@/components/input-error';
 import { Button } from '@/components/ui/button';
 import {
     Card,
@@ -44,7 +45,7 @@ function humanize(value: string | null): string {
 export default function PortalLanguages() {
     const { languages, myLanguages } = usePage<PageProps>().props;
 
-    const { data, setData, errors, processing, submit } = useForm({
+    const { data, setData, errors, processing, submit, reset } = useForm({
         language_id: '',
         speaking_level: '',
         writing_level: '',
@@ -56,6 +57,7 @@ export default function PortalLanguages() {
         submit('post', store().url, {
             method: 'post',
             preserveScroll: true,
+            onSuccess: () => reset(),
         });
     };
 
@@ -77,68 +79,77 @@ export default function PortalLanguages() {
                             <CardTitle className="text-base">Request a language change</CardTitle>
                             <CardDescription>Add language proficiency levels</CardDescription>
                         </CardHeader>
-                        <CardContent className="space-y-4">
-                            <div className="grid gap-2">
-                                <Label htmlFor="language_id">Language</Label>
-                                <Select
-                                    value={data.language_id}
-                                    onValueChange={(value) => setData('language_id', value)}
-                                >
-                                    <SelectTrigger id="language_id">
-                                        <SelectValue placeholder="Choose a language" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        {languages.map((language) => (
-                                            <SelectItem key={language.id} value={String(language.id)}>
-                                                {language.name}
-                                            </SelectItem>
-                                        ))}
-                                    </SelectContent>
-                                </Select>
-                            </div>
+                        <CardContent>
+                            <form
+                                onSubmit={(e) => {
+                                    e.preventDefault();
+                                    submitRequest();
+                                }}
+                                className="space-y-4"
+                            >
+                                <div className="grid gap-2">
+                                    <Label htmlFor="language_id">Language</Label>
+                                    <Select
+                                        value={data.language_id}
+                                        onValueChange={(value) => setData('language_id', value)}
+                                    >
+                                        <SelectTrigger id="language_id">
+                                            <SelectValue placeholder="Choose a language" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            {languages.map((language) => (
+                                                <SelectItem key={language.id} value={String(language.id)}>
+                                                    {language.name}
+                                                </SelectItem>
+                                            ))}
+                                        </SelectContent>
+                                    </Select>
+                                    <InputError message={errors.language_id} />
+                                </div>
 
-                            {(['speaking_level', 'writing_level', 'reading_level'] as const).map(
-                                (field) => (
-                                    <div className="grid gap-2" key={field}>
-                                        <Label htmlFor={field}>
-                                            {field.replace('_level', '')} level
-                                        </Label>
-                                        <Select
-                                            value={data[field]}
-                                            onValueChange={(value) => setData(field, value)}
-                                        >
-                                            <SelectTrigger id={field}>
-                                                <SelectValue placeholder="Select a level" />
-                                            </SelectTrigger>
-                                            <SelectContent>
-                                                {levels.map((level) => (
-                                                    <SelectItem key={level} value={level}>
-                                                        {humanize(level)}
-                                                    </SelectItem>
-                                                ))}
-                                            </SelectContent>
-                                        </Select>
-                                    </div>
-                                ),
-                            )}
+                                {(['speaking_level', 'writing_level', 'reading_level'] as const).map(
+                                    (field) => (
+                                        <div className="grid gap-2" key={field}>
+                                            <Label htmlFor={field}>
+                                                {field.replace('_level', '')} level
+                                            </Label>
+                                            <Select
+                                                value={data[field]}
+                                                onValueChange={(value) => setData(field, value)}
+                                            >
+                                                <SelectTrigger id={field}>
+                                                    <SelectValue placeholder="Select a level" />
+                                                </SelectTrigger>
+                                                <SelectContent>
+                                                    {levels.map((level) => (
+                                                        <SelectItem key={level} value={level}>
+                                                            {humanize(level)}
+                                                        </SelectItem>
+                                                    ))}
+                                                </SelectContent>
+                                            </Select>
+                                            <InputError message={errors[field]} />
+                                        </div>
+                                    ),
+                                )}
 
-                            <div className="grid gap-2">
-                                <Label htmlFor="note">Note for HR (optional)</Label>
-                                <textarea
-                                    id="note"
-                                    className="min-h-12 w-full rounded-md border bg-transparent px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-ring"
-                                    value={data.note}
-                                    onChange={(e) => setData('note', e.target.value)}
-                                />
-                            </div>
+                                <div className="grid gap-2">
+                                    <Label htmlFor="note">Note for HR (optional)</Label>
+                                    <textarea
+                                        id="note"
+                                        className="min-h-12 w-full rounded-md border bg-transparent px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-ring"
+                                        value={data.note}
+                                        onChange={(e) => setData('note', e.target.value)}
+                                        placeholder="Any additional context for this request…"
+                                        maxLength={1000}
+                                    />
+                                    <InputError message={errors.note} />
+                                </div>
 
-                            {errors.language_id && (
-                                <p className="text-sm text-red-600">{errors.language_id}</p>
-                            )}
-
-                            <Button onClick={submitRequest} disabled={processing}>
-                                {processing ? 'Submitting…' : 'Submit for approval'}
-                            </Button>
+                                <Button type="submit" disabled={processing}>
+                                    {processing ? 'Submitting…' : 'Submit for approval'}
+                                </Button>
+                            </form>
                         </CardContent>
                     </Card>
 

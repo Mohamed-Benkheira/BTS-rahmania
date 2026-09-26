@@ -33,19 +33,36 @@ class SkillsController extends Controller
 
     public function store(Request $request): RedirectResponse
     {
-        $payload = $request->validate([
+        $validated = $request->validate([
+            'skill_id' => ['required', 'integer', 'exists:skills,id'],
             'proficiency_level' => ['required', 'integer', 'between:1,5'],
-            'years_experience' => ['nullable', 'numeric', 'min:0'],
-            'last_used_at' => ['nullable', 'date'],
+            'years_experience' => ['nullable', 'numeric', 'min:0', 'max:60'],
+            'last_used_at' => ['nullable', 'date', 'before_or_equal:today'],
             'notes' => ['nullable', 'string', 'max:1000'],
+            'note' => ['nullable', 'string', 'max:1000'],
+        ], [
+            'skill_id.required' => 'Please select a skill.',
+            'skill_id.exists' => 'The selected skill is invalid.',
+            'proficiency_level.required' => 'Please select a proficiency level.',
+            'proficiency_level.between' => 'Proficiency level must be between 1 and 5.',
+            'years_experience.min' => 'Years of experience cannot be negative.',
+            'years_experience.max' => 'Years of experience cannot exceed 60.',
+            'last_used_at.before_or_equal' => 'Last used date cannot be in the future.',
         ]);
+
+        $payload = [
+            'proficiency_level' => (int) $validated['proficiency_level'],
+            'years_experience' => isset($validated['years_experience']) && $validated['years_experience'] !== '' ? (float) $validated['years_experience'] : null,
+            'last_used_at' => $validated['last_used_at'] ?? null,
+            'notes' => $validated['notes'] ?? null,
+        ];
 
         app(ProfileChangeRequestService::class)->submit(
             employee: $request->user()->employee,
             type: ProfileChangeType::Skill,
-            subjectId: (int) $request->input('skill_id'),
+            subjectId: (int) $validated['skill_id'],
             payload: $payload,
-            note: $request->input('note'),
+            note: $validated['note'] ?? null,
             actor: $request->user(),
         );
 

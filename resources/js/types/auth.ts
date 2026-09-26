@@ -36,11 +36,11 @@ export type Employee = {
     employment_status: string;
     biography: string | null;
     profile_photo_path: string | null;
-    position?: { id: number; name: string } | null;
+    position?: { id: number; name?: string; title?: string } | null;
     department?: { id: number; name: string } | null;
     team?: { id: number; name: string } | null;
     businessUnit?: { id: number; name: string } | null;
-    manager?: { id: number; full_name: string } | null;
+    manager?: { id: number; first_name?: string; last_name?: string; full_name?: string } | null;
     primaryLocation?: { id: number; name: string } | null;
 }
 

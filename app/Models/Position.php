@@ -15,6 +15,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * @property string|null $level
  * @property string|null $description
  * @property bool $is_active
+ * @property-read string $name
  */
 #[Fillable(['title', 'code', 'level', 'description', 'is_active'])]
 class Position extends Model
@@ -22,11 +23,23 @@ class Position extends Model
     /** @use HasFactory<PositionFactory> */
     use HasFactory;
 
+    /**
+     * @var list<string>
+     */
+    protected $appends = [
+        'name',
+    ];
+
     protected function casts(): array
     {
         return [
             'is_active' => 'boolean',
         ];
+    }
+
+    public function getNameAttribute(): string
+    {
+        return $this->title ?? '';
     }
 
     /** @return HasMany<Employee, $this> */

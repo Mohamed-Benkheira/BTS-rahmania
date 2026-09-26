@@ -24,8 +24,8 @@ class EmployeeSkill extends Pivot
     protected function casts(): array
     {
         return [
-            'last_used_at' => 'date',
-            'verified_at' => 'datetime',
+            'last_used_at' => 'date:Y-m-d',
+            'verified_at' => 'datetime:Y-m-d H:i',
         ];
     }
 

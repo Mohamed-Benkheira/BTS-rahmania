@@ -34,7 +34,7 @@ class ProjectEvaluation extends Model
             'communication_rating' => 'integer',
             'delivery_rating' => 'integer',
             'quality_rating' => 'integer',
-            'evaluated_at' => 'datetime',
+            'evaluated_at' => 'date:Y-m-d',
         ];
     }
 

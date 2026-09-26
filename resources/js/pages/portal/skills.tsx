@@ -1,4 +1,5 @@
 import { Head, useForm, usePage } from '@inertiajs/react';
+import InputError from '@/components/input-error';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
@@ -39,10 +40,11 @@ const proficiencyLabels = ['', 'Beginner', 'Basic', 'Intermediate', 'Advanced', 
 export default function PortalSkills() {
     const { skills, mySkills } = usePage<PageProps>().props;
 
-    const { data, setData, errors, processing, submit } = useForm({
+    const { data, setData, errors, processing, submit, reset } = useForm({
         skill_id: '',
         proficiency_level: '',
         years_experience: '',
+        last_used_at: '',
         notes: '',
         note: '',
     });
@@ -51,6 +53,7 @@ export default function PortalSkills() {
         submit('post', store().url, {
             method: 'post',
             preserveScroll: true,
+            onSuccess: () => reset(),
         });
     };
 
@@ -72,89 +75,114 @@ export default function PortalSkills() {
                             <CardTitle className="text-base">Request a skill change</CardTitle>
                             <CardDescription>Add or update a skill</CardDescription>
                         </CardHeader>
-                        <CardContent className="space-y-4">
-                            <div className="grid gap-2">
-                                <Label htmlFor="skill_id">Skill</Label>
-                                <Select
-                                    value={data.skill_id}
-                                    onValueChange={(value) => setData('skill_id', value)}
-                                >
-                                    <SelectTrigger id="skill_id">
-                                        <SelectValue placeholder="Choose a skill" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        {skills.map((skill) => (
-                                            <SelectItem key={skill.id} value={String(skill.id)}>
-                                                {skill.name}
-                                            </SelectItem>
-                                        ))}
-                                    </SelectContent>
-                                </Select>
-                            </div>
-
-                            <div className="grid gap-2">
-                                <Label htmlFor="proficiency_level">Proficiency (1–5)</Label>
-                                <Select
-                                    value={data.proficiency_level}
-                                    onValueChange={(value) => setData('proficiency_level', value)}
-                                >
-                                    <SelectTrigger id="proficiency_level">
-                                        <SelectValue placeholder="Select a level" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        {proficiencyLabels.map((label, index) =>
-                                            index === 0 ? null : (
-                                                <SelectItem key={index} value={String(index)}>
-                                                    {index} — {label}
+                        <CardContent>
+                            <form
+                                onSubmit={(e) => {
+                                    e.preventDefault();
+                                    submitRequest();
+                                }}
+                                className="space-y-4"
+                            >
+                                <div className="grid gap-2">
+                                    <Label htmlFor="skill_id">Skill</Label>
+                                    <Select
+                                        value={data.skill_id}
+                                        onValueChange={(value) => setData('skill_id', value)}
+                                    >
+                                        <SelectTrigger id="skill_id">
+                                            <SelectValue placeholder="Choose a skill" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            {skills.map((skill) => (
+                                                <SelectItem key={skill.id} value={String(skill.id)}>
+                                                    {skill.name}
                                                 </SelectItem>
-                                            ),
-                                        )}
-                                    </SelectContent>
-                                </Select>
-                            </div>
+                                            ))}
+                                        </SelectContent>
+                                    </Select>
+                                    <InputError message={errors.skill_id} />
+                                </div>
 
-                            <div className="grid gap-2">
-                                <Label htmlFor="years_experience">Years of experience</Label>
-                                <Input
-                                    id="years_experience"
-                                    type="number"
-                                    min={0}
-                                    step={0.5}
-                                    value={data.years_experience}
-                                    onChange={(e) => setData('years_experience', e.target.value)}
-                                />
-                            </div>
+                                <div className="grid gap-2">
+                                    <Label htmlFor="proficiency_level">Proficiency (1–5)</Label>
+                                    <Select
+                                        value={data.proficiency_level}
+                                        onValueChange={(value) => setData('proficiency_level', value)}
+                                    >
+                                        <SelectTrigger id="proficiency_level">
+                                            <SelectValue placeholder="Select a level" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            {proficiencyLabels.map((label, index) =>
+                                                index === 0 ? null : (
+                                                    <SelectItem key={index} value={String(index)}>
+                                                        {index} — {label}
+                                                    </SelectItem>
+                                                ),
+                                            )}
+                                        </SelectContent>
+                                    </Select>
+                                    <InputError message={errors.proficiency_level} />
+                                </div>
 
-                            <div className="grid gap-2">
-                                <Label htmlFor="notes">Notes</Label>
-                                <textarea
-                                    id="notes"
-                                    className="min-h-16 w-full rounded-md border bg-transparent px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-ring"
-                                    value={data.notes}
-                                    onChange={(e) => setData('notes', e.target.value)}
-                                    placeholder="Where did you use this skill?"
-                                />
-                            </div>
+                                <div className="grid grid-cols-2 gap-4">
+                                    <div className="grid gap-2">
+                                        <Label htmlFor="years_experience">Years of experience</Label>
+                                        <Input
+                                            id="years_experience"
+                                            type="number"
+                                            min={0}
+                                            max={60}
+                                            step={0.5}
+                                            value={data.years_experience}
+                                            onChange={(e) => setData('years_experience', e.target.value)}
+                                        />
+                                        <InputError message={errors.years_experience} />
+                                    </div>
 
-                            <div className="grid gap-2">
-                                <Label htmlFor="note">Note for HR (optional)</Label>
-                                <textarea
-                                    id="note"
-                                    className="min-h-12 w-full rounded-md border bg-transparent px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-ring"
-                                    value={data.note}
-                                    onChange={(e) => setData('note', e.target.value)}
-                                />
-                            </div>
+                                    <div className="grid gap-2">
+                                        <Label htmlFor="last_used_at">Last used</Label>
+                                        <Input
+                                            id="last_used_at"
+                                            type="date"
+                                            max={new Date().toISOString().split('T')[0]}
+                                            value={data.last_used_at}
+                                            onChange={(e) => setData('last_used_at', e.target.value)}
+                                        />
+                                        <InputError message={errors.last_used_at} />
+                                    </div>
+                                </div>
 
-                            {(errors.skill_id || errors.proficiency_level) && (
-                                <p className="text-sm text-red-600">
-                                    {errors.skill_id ?? errors.proficiency_level}
-                                </p>
-                            )}
+                                <div className="grid gap-2">
+                                    <Label htmlFor="notes">Notes</Label>
+                                    <textarea
+                                        id="notes"
+                                        className="min-h-16 w-full rounded-md border bg-transparent px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-ring"
+                                        value={data.notes}
+                                        onChange={(e) => setData('notes', e.target.value)}
+                                        placeholder="Where did you use this skill?"
+                                        maxLength={1000}
+                                    />
+                                    <InputError message={errors.notes} />
+                                </div>
 
-                            <Button onClick={submitRequest} disabled={processing}>
-                                {processing ? 'Submitting…' : 'Submit for approval'}
-                            </Button>
+                                <div className="grid gap-2">
+                                    <Label htmlFor="note">Note for HR (optional)</Label>
+                                    <textarea
+                                        id="note"
+                                        className="min-h-12 w-full rounded-md border bg-transparent px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-ring"
+                                        value={data.note}
+                                        onChange={(e) => setData('note', e.target.value)}
+                                        placeholder="Any additional context for this request…"
+                                        maxLength={1000}
+                                    />
+                                    <InputError message={errors.note} />
+                                </div>
+
+                                <Button type="submit" disabled={processing}>
+                                    {processing ? 'Submitting…' : 'Submit for approval'}
+                                </Button>
+                            </form>
                         </CardContent>
                     </Card>
 

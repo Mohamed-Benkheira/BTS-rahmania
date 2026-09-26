@@ -31,18 +31,32 @@ class AvailabilityController extends Controller
 
     public function store(Request $request): RedirectResponse
     {
-        $payload = $request->validate([
+        $validated = $request->validate([
             'start_date' => ['required', 'date'],
             'end_date' => ['required', 'date', 'after_or_equal:start_date'],
             'availability_percentage' => ['required', 'numeric', 'between:0,100'],
             'reason' => ['nullable', 'string', 'max:500'],
+            'note' => ['nullable', 'string', 'max:1000'],
+        ], [
+            'start_date.required' => 'Please provide a start date.',
+            'end_date.required' => 'Please provide an end date.',
+            'end_date.after_or_equal' => 'The end date must be on or after the start date.',
+            'availability_percentage.required' => 'Please specify your availability percentage.',
+            'availability_percentage.between' => 'Availability percentage must be between 0 and 100.',
         ]);
+
+        $payload = [
+            'start_date' => $validated['start_date'],
+            'end_date' => $validated['end_date'],
+            'availability_percentage' => (float) $validated['availability_percentage'],
+            'reason' => $validated['reason'] ?? null,
+        ];
 
         app(ProfileChangeRequestService::class)->submit(
             employee: $request->user()->employee,
             type: ProfileChangeType::Availability,
             payload: $payload,
-            note: $request->input('note'),
+            note: $validated['note'] ?? null,
             actor: $request->user(),
         );
 

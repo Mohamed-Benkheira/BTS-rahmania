@@ -1,0 +1,1020 @@
+<!DOCTYPE html>
+
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Djezzy Resource Assignment Platform — Final Defense Presentation</title>
+<link href="styles.css" rel="stylesheet"/>
+<link href="assets/djezzy-logo.png" rel="icon" type="image/png"/>
+</head>
+<body>
+<!-- Animated Ambient Gradient Background -->
+<div class="animated-bg"></div>
+<!-- Top Progress Indicator -->
+<div class="progress-container">
+<div class="progress-bar" id="progressBar"></div>
+</div>
+<!-- Main Slide Presentation Viewport -->
+<main class="presentation-container">
+<!-- ========================================== -->
+<!-- SLIDE 1: TITLE & THREE LOGOS -->
+<!-- ========================================== -->
+<section class="slide active" data-notes="Good afternoon, Madame President, and members of the jury. I am Brahimi Mohamed Amine, and with my project partner Benkheira Mohamed Kamal, we present our graduation project: the Design and Implementation of a Resource Assignment and Allocation Platform for Djezzy — Case Study: IT and HR Departments. This project was supervised by Mme Krim at INSFP Rahmania, and M. Ali Bouras at Djezzy. We are pleased to present our work to you today." data-speaker="Brahimi Mohamed Amine" id="slide-1">
+<div style="flex:1; display:flex; flex-direction:column; justify-content:center; align-items:center; text-align:center; padding:1.5rem 1rem;">
+<!-- Three Organization Logos -->
+<div class="logos-container">
+<div class="logo-item" title="Host Organization: Djezzy">
+<img alt="Djezzy Logo" src="assets/djezzy-logo.png" style="height:76px; object-fit:contain;"/>
+</div>
+<div style="height:48px; width:2px; background:var(--border-strong);"></div>
+<div class="logo-item" title="Academic Institution: INSFP Rahmania">
+<img alt="INSFP Rahmania Logo" src="assets/insfp.png" style="height:76px; object-fit:contain;"/>
+</div>
+<div style="height:48px; width:2px; background:var(--border-strong);"></div>
+<div class="logo-item" title="Ministry of Vocational Training">
+<img alt="Ministry Logo" src="assets/ministry.png" style="height:76px; object-fit:contain;"/>
+</div>
+</div>
+<div style="display:inline-block; background:rgba(227,6,19,0.08); border:1.5px solid rgba(227,6,19,0.25); padding:0.5rem 1.4rem; border-radius:9999px; font-size:1.05rem; font-weight:800; color:var(--primary-color); text-transform:uppercase; letter-spacing:0.08em; margin-bottom:1.2rem;">
+          Final-Year Project • BTS Informatique
+        </div>
+<h1 style="font-size:3.05rem; font-weight:900; line-height:1.2; max-width:1250px; margin-bottom:1rem; letter-spacing:-0.03em; color:var(--text-primary);">Design and Implementation of a Resource Assignment and Allocation Platform for Djezzy</h1>
+<p style="font-size:1.5rem; color:var(--text-secondary); max-width:950px; margin-bottom:2.4rem; font-weight:600;">Case Study: IT and HR Departments</p>
+<div style="display:grid; grid-template-columns: repeat(2, 1fr); gap:2rem; width:100%; max-width:850px; text-align:left;">
+<div class="card" style="padding:1.3rem 1.6rem;">
+<div style="font-size:0.95rem; text-transform:uppercase; color:var(--text-muted); font-weight:800;">Supervisors</div>
+<div style="font-size:1.2rem; font-weight:700; color:var(--text-primary); margin-top:0.4rem;"><strong>Mme Krim</strong> (INSFP Supervisor)</div>
+<div style="font-size:1.2rem; font-weight:700; color:var(--text-primary); margin-top:0.2rem;"><strong>M. Ali Bouras</strong> (Djezzy Promoter)</div>
+</div>
+<div class="card" style="padding:1.3rem 1.6rem;">
+<div style="font-size:0.95rem; text-transform:uppercase; color:var(--text-muted); font-weight:800;">Academic Year</div>
+<div style="font-size:1.45rem; font-weight:900; color:#0284c7; margin-top:0.4rem; font-family:var(--font-mono);">2025 / 2026</div>
+<div style="font-size:1.05rem; color:var(--text-secondary); margin-top:0.2rem;">INSFP Rahmania • Algiers</div>
+</div>
+</div>
+</div>
+</section>
+<!-- ========================================== -->
+<!-- SLIDE 2: THE PROBLEM: MANUAL STAFFING -->
+<!-- ========================================== -->
+<section class="slide" data-notes="Djezzy is a major telecommunications operator with over 18 million mobile subscribers and more than 300 technical engineers. Before our project, assigning staff to engineering projects was handled manually through scattered Excel spreadsheets, endless email threads, and personal memory.&lt;br&gt;&lt;br&gt;This created our first major operational breakdown: finding the right skills was difficult. Project managers had no central directory to search for specific technical competencies, database proficiencies, or certifications across different teams.&lt;br&gt;&lt;br&gt;Second was staff overload. Without real-time workload visibility, some engineers were accidentally booked on two or three projects simultaneously, exceeding 100% capacity and creating severe delivery delays.&lt;br&gt;&lt;br&gt;Third was the absence of decision history. There was no audit trail showing who requested an assignment, who approved it, or why an engineer was replaced, making accountability impossible.&lt;br&gt;&lt;br&gt;Finally, employee profiles quickly became outdated. Engineers had no self-service channel to submit newly acquired certifications or diplomas, leaving HR records weeks or months behind reality." data-speaker="Brahimi Mohamed Amine" id="slide-2">
+<div class="slide-header">
+<div class="slide-title-group">
+<h2>The Problem: Manual Resource Allocation</h2>
+<p>The operational challenges of managing technical staff across telecom initiatives</p>
+</div>
+<div class="slide-meta-badge">
+<span class="slide-num-badge">02 / 16</span>
+</div>
+</div>
+<div class="slide-body">
+<div class="grid-2">
+<!-- Left: Enterprise Scale (Fragment 1) -->
+<div class="card step-item revealed" style="border-left: 5px solid var(--djezzy-red);">
+<div class="card-title red" style="font-size:1.6rem;">
+<div class="icon-box red">
+<svg class="icon-svg" fill="none" stroke="currentColor" viewbox="0 0 24 24"><path d="M6 22V4a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v18Z"></path><path d="M6 12H4a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h2"></path><path d="M18 9h2a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2h-2"></path><path d="M10 6h4"></path><path d="M10 10h4"></path><path d="M10 14h4"></path><path d="M10 18h4"></path></svg>
+</div>
+<span>The Scale at Djezzy</span>
+</div>
+<div style="display:grid; grid-template-columns:1fr 1fr; gap:1.2rem; margin-top:1.2rem;">
+<div class="stat-box">
+<div class="stat-value red">18M+</div>
+<div class="stat-label">Mobile Subscribers</div>
+</div>
+<div class="stat-box">
+<div class="stat-value">300+</div>
+<div class="stat-label">Engineers &amp; Staff</div>
+</div>
+</div>
+<div style="margin-top:1.5rem; padding:1.3rem; background:var(--bg-subtle); border:1px solid var(--border-subtle); border-radius:12px; border-left:4px solid var(--accent-amber);">
+<div style="font-weight:800; color:var(--text-primary); font-size:1.25rem;">The Old Routine</div>
+<div style="font-size:1.15rem; color:var(--text-secondary); margin-top:0.4rem; line-height:1.5;">
+                Scattered Excel Spreadsheets • Endless Email Chains • Personal Memory
+              </div>
+</div>
+</div>
+<!-- Right: Four Core Breakdowns -->
+<div class="card">
+<div class="card-title amber" style="font-size:1.6rem;">
+<div class="icon-box amber">
+<svg class="icon-svg" fill="none" stroke="currentColor" viewbox="0 0 24 24"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"></path><line x1="12" x2="12" y1="9" y2="13"></line><line x1="12" x2="12.01" y1="17" y2="17"></line></svg>
+</div>
+<span>Four Main Problems</span>
+</div>
+<div style="display:flex; flex-direction:column; gap:1rem; margin-top:1rem;">
+<div class="step-item" style="display:flex; align-items:center; gap:1rem; background:var(--bg-subtle); border:1px solid var(--border-subtle); padding:1rem 1.3rem; border-radius:12px;">
+<div class="icon-box red" style="width:44px; height:44px;"><svg class="icon-svg" fill="none" stroke="currentColor" viewbox="0 0 24 24"><circle cx="11" cy="11" r="8"></circle><path d="m21 21-4.3-4.3"></path></svg></div>
+<div>
+<strong style="color:var(--text-primary); font-size:1.2rem;">Hard to Find Skills:</strong>
+<span style="color:var(--text-secondary); font-size:1.15rem;"> No central search for tools or certifications.</span>
+</div>
+</div>
+<div class="step-item" style="display:flex; align-items:center; gap:1rem; background:var(--bg-subtle); border:1px solid var(--border-subtle); padding:1rem 1.3rem; border-radius:12px;">
+<div class="icon-box red" style="width:44px; height:44px;"><svg class="icon-svg" fill="none" stroke="currentColor" viewbox="0 0 24 24"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><line x1="17" x2="22" y1="8" y2="13"></line><line x1="22" x2="17" y1="8" y2="13"></line></svg></div>
+<div>
+<strong style="color:var(--text-primary); font-size:1.2rem;">Staff Overload:</strong>
+<span style="color:var(--text-secondary); font-size:1.15rem;"> Engineers booked on 2-3 projects exceeding 100%.</span>
+</div>
+</div>
+<div class="step-item" style="display:flex; align-items:center; gap:1rem; background:var(--bg-subtle); border:1px solid var(--border-subtle); padding:1rem 1.3rem; border-radius:12px;">
+<div class="icon-box red" style="width:44px; height:44px;"><svg class="icon-svg" fill="none" stroke="currentColor" viewbox="0 0 24 24"><path d="M12 20h9"></path><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"></path></svg></div>
+<div>
+<strong style="color:var(--text-primary); font-size:1.2rem;">No Decision History:</strong>
+<span style="color:var(--text-secondary); font-size:1.15rem;"> No audit log of who approved or changed staff.</span>
+</div>
+</div>
+<div class="step-item" style="display:flex; align-items:center; gap:1rem; background:var(--bg-subtle); border:1px solid var(--border-subtle); padding:1rem 1.3rem; border-radius:12px;">
+<div class="icon-box red" style="width:44px; height:44px;"><svg class="icon-svg" fill="none" stroke="currentColor" viewbox="0 0 24 24"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"></path></svg></div>
+<div>
+<strong style="color:var(--text-primary); font-size:1.2rem;">Outdated Profiles:</strong>
+<span style="color:var(--text-secondary); font-size:1.15rem;"> Employees had no self-service channel to upload certs.</span>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</section>
+<!-- ========================================== -->
+<!-- SLIDE 3: OBJECTIVES -->
+<!-- ========================================== -->
+<section class="slide" data-notes="To solve these operational breakdowns, we established four clear project objectives. Our first objective is to Centralize: create a single, unified database holding verified profiles, technical skills, certifications, and availability for all 300 technical staff.&lt;br&gt;&lt;br&gt;Our second objective is to Automate: implement an intelligent matching algorithm that evaluates candidate competencies and free hours against project needs to recommend the best candidates.&lt;br&gt;&lt;br&gt;Our third objective is to Govern: establish structured validation workflows and an immutable audit log so every staffing allocation requires formal managerial authorization.&lt;br&gt;&lt;br&gt;Our fourth objective is to Empower: give employees a dedicated self-service web portal where they can check their assigned projects, view their workload, and submit verified certificates." data-speaker="Brahimi Mohamed Amine" id="slide-3">
+<div class="slide-header">
+<div class="slide-title-group">
+<h2>Project Objectives</h2>
+<p>Four clear pillars to modernize human resource allocation</p>
+</div>
+<div class="slide-meta-badge">
+<span class="slide-num-badge">03 / 16</span>
+</div>
+</div>
+<div class="slide-body">
+<div class="grid-4" style="height:100%;">
+<div class="card step-item revealed" style="border-top:5px solid var(--accent-cyan);">
+<div class="icon-box blue" style="margin-bottom:1.2rem;">
+<svg class="icon-svg" fill="none" stroke="currentColor" viewbox="0 0 24 24"><ellipse cx="12" cy="5" rx="9" ry="3"></ellipse><path d="M3 5V19A9 3 0 0 0 21 19V5"></path><path d="M3 12A9 3 0 0 0 21 12"></path></svg>
+</div>
+<div class="card-title blue" style="font-size:1.6rem;">1. Centralize</div>
+<p style="font-size:1.22rem; color:var(--text-secondary); line-height:1.6; margin-top:0.4rem;">
+              One central database for 300+ employees, skills, certifications, and availability.
+            </p>
+<div style="margin-top:auto; font-family:var(--font-mono); font-size:1.1rem; color:#0284c7; font-weight:800;">
+              Single Directory
+            </div>
+</div>
+<div class="card step-item" style="border-top:5px solid var(--accent-amber);">
+<div class="icon-box amber" style="margin-bottom:1.2rem;">
+<svg class="icon-svg" fill="none" stroke="currentColor" viewbox="0 0 24 24"><path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z"></path></svg>
+</div>
+<div class="card-title amber" style="font-size:1.6rem;">2. Automate</div>
+<p style="font-size:1.22rem; color:var(--text-secondary); line-height:1.6; margin-top:0.4rem;">
+              Match candidate skills and free hours to project requirements using scoring formulas.
+            </p>
+<div style="margin-top:auto; font-family:var(--font-mono); font-size:1.1rem; color:#d97706; font-weight:800;">
+              Smart Matching
+            </div>
+</div>
+<div class="card step-item" style="border-top:5px solid var(--accent-emerald);">
+<div class="icon-box green" style="margin-bottom:1.2rem;">
+<svg class="icon-svg" fill="none" stroke="currentColor" viewbox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10"></path><path d="m9 12 2 2 4-4"></path></svg>
+</div>
+<div class="card-title green" style="font-size:1.6rem;">3. Govern</div>
+<p style="font-size:1.22rem; color:var(--text-secondary); line-height:1.6; margin-top:0.4rem;">
+              Require manager approval before work starts and maintain full audit traceability.
+            </p>
+<div style="margin-top:auto; font-family:var(--font-mono); font-size:1.1rem; color:#059669; font-weight:800;">
+              State Machine • Audit
+            </div>
+</div>
+<div class="card step-item" style="border-top:5px solid var(--djezzy-red);">
+<div class="icon-box red" style="margin-bottom:1.2rem;">
+<svg class="icon-svg" fill="none" stroke="currentColor" viewbox="0 0 24 24"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M22 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
+</div>
+<div class="card-title red" style="font-size:1.6rem;">4. Empower</div>
+<p style="font-size:1.22rem; color:var(--text-secondary); line-height:1.6; margin-top:0.4rem;">
+              Give employees a self-service portal to update skills and upload verified credentials.
+            </p>
+<div style="margin-top:auto; font-family:var(--font-mono); font-size:1.1rem; color:#e30613; font-weight:800;">
+              Self-Service Portal
+            </div>
+</div>
+</div>
+</div>
+</section>
+<!-- ========================================== -->
+<!-- SLIDE 4: PROPOSED SOLUTION -->
+<!-- ========================================== -->
+<section class="slide" data-notes="Rather than creating a single cluttered application, we designed two dedicated spaces tailored to each user type. For managers and HR personnel, we built an administrative back-office using Laravel Filament to manage projects, run the candidate matching engine, and approve staff requests.&lt;br&gt;&lt;br&gt;For the 300 technical employees, we built a modern React web portal. Through this portal, engineers can view their active project assignments, monitor their workload in real time, and submit new certificates directly to HR." data-speaker="Brahimi Mohamed Amine" id="slide-4">
+<div class="slide-header">
+<div class="slide-title-group">
+<h2>Our Solution: Two Dedicated Interfaces</h2>
+<p>One unified backend system supporting two tailored user experiences</p>
+</div>
+<div class="slide-meta-badge">
+<span class="slide-num-badge">04 / 16</span>
+</div>
+</div>
+<div class="slide-body">
+<div class="grid-2">
+<!-- Back-Office -->
+<div class="card step-item revealed" style="border-top:5px solid var(--accent-amber);">
+<div class="card-title amber" style="font-size:1.6rem;">
+<div class="icon-box amber"><svg class="icon-svg" fill="none" stroke="currentColor" viewbox="0 0 24 24"><rect height="14" rx="2" width="20" x="2" y="3"></rect><line x1="8" x2="16" y1="21" y2="21"></line><line x1="12" x2="12" y1="17" y2="21"></line></svg></div>
+<span>1. Administrative Back-Office</span>
+</div>
+<div class="screenshot-container" style="height:270px; margin-bottom:1rem;">
+<span class="screenshot-badge">Filament 5 • For Managers &amp; HR</span>
+<img alt="Admin Dashboard" src="assets/fig-admin-dashboard.png"/>
+</div>
+<div style="display:flex; justify-content:space-between; font-size:1.15rem; color:var(--text-primary); background:var(--bg-subtle); border:1px solid var(--border-subtle); padding:0.9rem 1.3rem; border-radius:10px;">
+<span><strong>Dashboard:</strong> KPIs &amp; Staffing Alerts</span>
+<span>•</span>
+<span><strong>Matching:</strong> Candidate Scoring</span>
+<span>•</span>
+<span><strong>Approvals:</strong> Assignments</span>
+</div>
+</div>
+<!-- Employee Portal -->
+<div class="card step-item" style="border-top:5px solid var(--accent-cyan);">
+<div class="card-title blue" style="font-size:1.6rem;">
+<div class="icon-box blue"><svg class="icon-svg" fill="none" stroke="currentColor" viewbox="0 0 24 24"><rect height="20" rx="2" ry="2" width="14" x="5" y="2"></rect><path d="M12 18h.01"></path></svg></div>
+<span>2. Employee Self-Service Portal</span>
+</div>
+<div class="screenshot-container" style="height:270px; margin-bottom:1rem;">
+<span class="screenshot-badge" style="color:#0284c7;">React 19 • For 300+ Staff</span>
+<img alt="Portal Dashboard" src="assets/fig-portal-dashboard.png"/>
+</div>
+<div style="display:flex; justify-content:space-between; font-size:1.15rem; color:var(--text-primary); background:var(--bg-subtle); border:1px solid var(--border-subtle); padding:0.9rem 1.3rem; border-radius:10px;">
+<span><strong>Personal:</strong> Workload &amp; Projects</span>
+<span>•</span>
+<span><strong>Updates:</strong> Skill &amp; Cert Upload</span>
+<span>•</span>
+<span><strong>Alerts:</strong> Notification Bell</span>
+</div>
+</div>
+</div>
+</div>
+</section>
+<!-- ========================================== -->
+<!-- SLIDE 5: USER ROLES & ACCESS -->
+<!-- ========================================== -->
+<section class="slide" data-notes="To maintain strict security and accountability, we organized users into six distinct roles. Our System Administrators include the super-admin, who maintains global system configuration and role permissions, and the admin, who oversees project operations and approves staff allocations.&lt;br&gt;&lt;br&gt;Next, our Department Managers include HR officers, who verify employee certificates and approve skill updates, and Resource Managers, who supervise department staffing levels and team structures.&lt;br&gt;&lt;br&gt;For project execution, Project Managers define initiative requirements and request candidate allocations, while Employees access their portal to view assigned tasks and manage their personal profiles.&lt;br&gt;&lt;br&gt;Our primary governance rule is Separation of Duties: Project Managers can search and propose candidates, but only an Administrator or HR officer can approve the booking. This prevents bias and eliminates accidental double-booking." data-speaker="Brahimi Mohamed Amine" id="slide-5">
+<div class="slide-header">
+<div class="slide-title-group">
+<h2>User Roles &amp; Access Control</h2>
+<p>Six roles with clear separation of responsibilities</p>
+</div>
+<div class="slide-meta-badge">
+<span class="slide-num-badge">05 / 16</span>
+</div>
+</div>
+<div class="slide-body">
+<div class="grid-3">
+<div class="card step-item revealed">
+<div class="card-title red" style="font-size:1.55rem;">
+<div class="icon-box red"><svg class="icon-svg" fill="none" stroke="currentColor" viewbox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10"></path></svg></div>
+<span>System Admins</span>
+</div>
+<div style="font-size:1.18rem; color:var(--text-secondary); margin-top:0.75rem; display:flex; flex-direction:column; gap:0.75rem; line-height:1.5;">
+<div><strong style="color:var(--text-primary);">super-admin:</strong> Complete system control, roles &amp; permissions.</div>
+<div><strong style="color:var(--text-primary);">admin:</strong> Approves assignments and oversees project requests.</div>
+</div>
+</div>
+<div class="card step-item">
+<div class="card-title blue" style="font-size:1.55rem;">
+<div class="icon-box blue"><svg class="icon-svg" fill="none" stroke="currentColor" viewbox="0 0 24 24"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M22 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg></div>
+<span>Department Managers</span>
+</div>
+<div style="font-size:1.18rem; color:var(--text-secondary); margin-top:0.75rem; display:flex; flex-direction:column; gap:0.75rem; line-height:1.5;">
+<div><strong style="color:var(--text-primary);">hr:</strong> Verifies employee certificates and moderates requests.</div>
+<div><strong style="color:var(--text-primary);">resource-manager:</strong> Manages teams, positions, and departments.</div>
+</div>
+</div>
+<div class="card step-item">
+<div class="card-title green" style="font-size:1.55rem;">
+<div class="icon-box green"><svg class="icon-svg" fill="none" stroke="currentColor" viewbox="0 0 24 24"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg></div>
+<span>Project &amp; Staff</span>
+</div>
+<div style="font-size:1.18rem; color:var(--text-secondary); margin-top:0.75rem; display:flex; flex-direction:column; gap:0.75rem; line-height:1.5;">
+<div><strong style="color:var(--text-primary);">project-manager:</strong> Creates projects and requests staff allocations.</div>
+<div><strong style="color:var(--text-primary);">employee:</strong> Uses portal to update skills and view assignments.</div>
+</div>
+</div>
+</div>
+<div class="card step-item" style="background:rgba(227,6,19,0.08); border-color:rgba(227,6,19,0.35); padding:1.2rem 1.8rem;">
+<div style="display:flex; align-items:center; gap:1.2rem;">
+<div class="icon-box red" style="width:48px; height:48px;"><svg class="icon-svg" fill="none" stroke="currentColor" viewbox="0 0 24 24"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"></path><line x1="12" x2="12" y1="9" y2="13"></line></svg></div>
+<div style="font-size:1.25rem; color:var(--text-primary); line-height:1.5;">
+<strong style="color:var(--primary-color);">Key Rule: Separation of Duties:</strong> Project Managers request staff, but <strong style="color:var(--text-primary);">only Admins or HR can approve</strong>. This prevents bias and duplicate bookings.
+            </div>
+</div>
+</div>
+</div>
+</section>
+<!-- ========================================== -->
+<!-- SLIDE 6: HOW WORKFLOWS FUNCTION -->
+<!-- ========================================== -->
+<section class="slide" data-notes="Our platform structures daily operations into two automated workflows. The first is Workflow 1: The Assignment Lifecycle. It begins in the PENDING state: when a Project Manager needs technical staff, they select qualified candidates from the recommendation engine and create a draft staffing proposal.&lt;br&gt;&lt;br&gt;Next is the APPROVED state. To enforce our separation-of-duties policy, an HR administrator reviews the proposed candidates, verifies that no engineer exceeds 100% capacity, and officially authorizes the assignment.&lt;br&gt;&lt;br&gt;Third is the ACTIVE state. When the project's calendar start date arrives, the system automatically transitions the assignment to active. The engineers are officially committed to the project, and their capacity is locked in real time.&lt;br&gt;&lt;br&gt;Fourth is the COMPLETED state. Once project deliverables are completed and signed off, the assignment is marked finished. The engineers are immediately released back to full availability, and the entire history is permanently saved in the audit log.&lt;br&gt;&lt;br&gt;Below is our second process: the Profile and Certificate Verification Loop. When an employee uploads a new PDF diploma through their portal, it enters a verification queue. An HR administrator inspects the document, approves the update, and the employee's skills are instantly updated across the platform. Now, my partner Benkheira Mohamed Kamal will present our technical architecture." data-speaker="Brahimi Mohamed Amine" id="slide-6">
+<div class="slide-header">
+<div class="slide-title-group">
+<h2>Core Workflows: How Work Moves</h2>
+<p>Two clear, governed processes for project staffing and profile updates</p>
+</div>
+<div class="slide-meta-badge">
+<span class="slide-num-badge">06 / 16</span>
+</div>
+</div>
+<div class="slide-body">
+<!-- Workflow 1: Assignment Lifecycle -->
+<div class="card" style="border-left:5px solid var(--accent-emerald);">
+<div class="card-title green" style="margin-bottom:1.1rem; font-size:1.6rem;">
+<div class="icon-box green"><svg class="icon-svg" fill="none" stroke="currentColor" viewbox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline></svg></div>
+<span>Workflow 1: Assignment Lifecycle</span>
+</div>
+<div class="flow-container">
+<div class="flow-step step-item revealed">
+<span class="workflow-pill pending">1. PENDING</span>
+<div style="font-size:1.2rem; font-weight:800; color:var(--text-primary); margin-top:0.3rem;">Manager Proposes Staff</div>
+<div style="font-size:1.05rem; color:var(--text-secondary); margin-top:0.2rem;">Selects candidate &amp; creates draft</div>
+</div>
+<div class="flow-arrow">→</div>
+<div class="flow-step step-item">
+<span class="workflow-pill approved">2. APPROVED</span>
+<div style="font-size:1.2rem; font-weight:800; color:var(--text-primary); margin-top:0.3rem;">Admin / HR Validates</div>
+<div style="font-size:1.05rem; color:var(--text-secondary); margin-top:0.2rem;">Reviews workload &amp; confirms booking</div>
+</div>
+<div class="flow-arrow">→</div>
+<div class="flow-step step-item">
+<span class="workflow-pill active">3. ACTIVE</span>
+<div style="font-size:1.2rem; font-weight:800; color:var(--text-primary); margin-top:0.3rem;">Work Begins on Date</div>
+<div style="font-size:1.05rem; color:var(--text-secondary); margin-top:0.2rem;">Project starts &amp; capacity locks</div>
+</div>
+<div class="flow-arrow">→</div>
+<div class="flow-step step-item">
+<span class="workflow-pill completed">4. COMPLETED</span>
+<div style="font-size:1.2rem; font-weight:800; color:var(--text-primary); margin-top:0.3rem;">Project Delivered</div>
+<div style="font-size:1.05rem; color:var(--text-secondary); margin-top:0.2rem;">Assignment ends &amp; history archived</div>
+</div>
+</div>
+</div>
+<!-- Workflow 2: Profile Update Loop -->
+<div class="card step-item" style="border-left:5px solid var(--accent-cyan);">
+<div class="card-title blue" style="margin-bottom:1.1rem; font-size:1.6rem;">
+<div class="icon-box blue"><svg class="icon-svg" fill="none" stroke="currentColor" viewbox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"></path><path d="M14 2v4a2 2 0 0 0 2 2h4"></path><path d="M9 15h6"></path><path d="M9 11h6"></path></svg></div>
+<span>Workflow 2: Employee Profile &amp; Certificate Verification</span>
+</div>
+<div class="flow-container">
+<div class="flow-step">
+<span class="workflow-pill active">1. UPLOAD</span>
+<div style="font-size:1.2rem; font-weight:800; color:var(--text-primary); margin-top:0.3rem;">Employee Submits PDF</div>
+<div style="font-size:1.05rem; color:var(--text-secondary); margin-top:0.2rem;">Uploads certificate proof in portal</div>
+</div>
+<div class="flow-arrow">→</div>
+<div class="flow-step">
+<span class="workflow-pill pending">2. PENDING</span>
+<div style="font-size:1.2rem; font-weight:800; color:var(--text-primary); margin-top:0.3rem;">Staged Queue</div>
+<div style="font-size:1.05rem; color:var(--text-secondary); margin-top:0.2rem;">Held in pending moderation queue</div>
+</div>
+<div class="flow-arrow">→</div>
+<div class="flow-step">
+<span class="workflow-pill approved">3. HR VERIFY</span>
+<div style="font-size:1.2rem; font-weight:800; color:var(--text-primary); margin-top:0.3rem;">HR Inspects Document</div>
+<div style="font-size:1.05rem; color:var(--text-secondary); margin-top:0.2rem;">Checks certificate authenticity</div>
+</div>
+<div class="flow-arrow">→</div>
+<div class="flow-step">
+<span class="workflow-pill completed">4. UPDATED</span>
+<div style="font-size:1.2rem; font-weight:800; color:var(--text-primary); margin-top:0.3rem;">Profile Updated</div>
+<div style="font-size:1.05rem; color:var(--text-secondary); margin-top:0.2rem;">Verified badge &amp; bell notification</div>
+</div>
+</div>
+</div>
+</div>
+</section>
+<!-- ========================================== -->
+<!-- SLIDE 7: ARCHITECTURE: HOW IT WORKS -->
+<!-- ========================================== -->
+<section class="slide" data-notes="Thank you, Mohamed Amine. Now, let us examine how the system is engineered. We selected a proven 3-tier architecture. On the client tier, users interact with the system through standard web browsers: managers access the Filament back-office, while employees use our React 19 single-page application.&lt;br&gt;&lt;br&gt;On the application tier, our backend runs on Laravel 11 and PHP 8.3. It coordinates all business logic, permission rules, and workflow state transitions. We use Inertia.js to seamlessly transmit data between Laravel and React without maintaining duplicate API endpoints.&lt;br&gt;&lt;br&gt;On the database tier, PostgreSQL 16 stores all relational company data across 44 tables. We enforce business constraints, relationship integrity, and assignment rules directly inside the PostgreSQL engine to guarantee complete reliability." data-speaker="Benkheira Mohamed Kamal" id="slide-7">
+<div class="slide-header">
+<div class="slide-title-group">
+<h2>Application Architecture: How It Works</h2>
+<p>A simple, solid 3-tier architecture with Laravel, React, and PostgreSQL</p>
+</div>
+<div class="slide-meta-badge">
+<span class="slide-num-badge">07 / 16</span>
+</div>
+</div>
+<div class="slide-body">
+<div class="grid-3" style="height:100%;">
+<!-- Client Tier -->
+<div class="card step-item revealed" style="border-top:5px solid var(--accent-cyan);">
+<div class="icon-box blue" style="margin-bottom:1rem;">
+<svg class="icon-svg" fill="none" stroke="currentColor" viewbox="0 0 24 24"><rect height="14" rx="2" width="20" x="2" y="3"></rect><line x1="8" x2="16" y1="21" y2="21"></line><line x1="12" x2="12" y1="17" y2="21"></line></svg>
+</div>
+<div class="card-title blue" style="font-size:1.6rem;">1. User Browser</div>
+<p style="font-size:1.15rem; color:var(--text-secondary); margin-bottom:1rem;">
+              Interfaces running in user web browsers:
+            </p>
+<div style="background:var(--bg-subtle); border:1px solid var(--border-subtle); padding:1rem; border-radius:10px; margin-bottom:0.75rem;">
+<strong style="color:var(--text-primary); font-size:1.2rem;">Manager Back-Office</strong>
+<div style="font-size:1.05rem; color:var(--text-secondary); margin-top:0.3rem;">Filament 5 • Fast management UI</div>
+</div>
+<div style="background:var(--bg-subtle); border:1px solid var(--border-subtle); padding:1rem; border-radius:10px;">
+<strong style="color:var(--text-primary); font-size:1.2rem;">Employee Portal</strong>
+<div style="font-size:1.05rem; color:var(--text-secondary); margin-top:0.3rem;">React 19 • Clean self-service SPA</div>
+</div>
+</div>
+<!-- Application Tier -->
+<div class="card step-item" style="border-top:5px solid var(--djezzy-red);">
+<div class="icon-box red" style="margin-bottom:1rem;">
+<svg class="icon-svg" fill="none" stroke="currentColor" viewbox="0 0 24 24"><rect height="16" rx="2" width="16" x="4" y="4"></rect><rect height="6" rx="1" width="6" x="9" y="9"></rect><path d="M15 2v2"></path><path d="M15 20v2"></path><path d="M2 15h2"></path><path d="M2 9h2"></path><path d="M20 15h2"></path><path d="M20 9h2"></path></svg>
+</div>
+<div class="card-title red" style="font-size:1.6rem;">2. Application Server</div>
+<p style="font-size:1.15rem; color:var(--text-secondary); margin-bottom:1rem;">
+              The engine executing all business logic:
+            </p>
+<div style="background:var(--bg-subtle); border:1px solid var(--border-subtle); padding:1rem; border-radius:10px; margin-bottom:0.75rem;">
+<strong style="color:#e30613; font-size:1.2rem;">Laravel 11 • PHP 8.3</strong>
+<div style="font-size:1.05rem; color:var(--text-secondary); margin-top:0.3rem;">Routes, validation &amp; rules</div>
+</div>
+<div style="background:var(--bg-subtle); border:1px solid var(--border-subtle); padding:1rem; border-radius:10px;">
+<strong style="color:#0284c7; font-size:1.2rem;">Inertia.js v3 Bridge</strong>
+<div style="font-size:1.05rem; color:var(--text-secondary); margin-top:0.3rem;">Feeds React props without separate API</div>
+</div>
+</div>
+<!-- Database Tier -->
+<div class="card step-item" style="border-top:5px solid var(--accent-emerald);">
+<div class="icon-box green" style="margin-bottom:1rem;">
+<svg class="icon-svg" fill="none" stroke="currentColor" viewbox="0 0 24 24"><ellipse cx="12" cy="5" rx="9" ry="3"></ellipse><path d="M3 5V19A9 3 0 0 0 21 19V5"></path><path d="M3 12A9 3 0 0 0 21 12"></path></svg>
+</div>
+<div class="card-title green" style="font-size:1.6rem;">3. Database</div>
+<p style="font-size:1.15rem; color:var(--text-secondary); margin-bottom:1rem;">
+              Where all company data lives securely:
+            </p>
+<div style="background:var(--bg-subtle); border:1px solid var(--border-subtle); padding:1rem; border-radius:10px; margin-bottom:0.75rem;">
+<strong style="color:#059669; font-size:1.2rem;">PostgreSQL 16</strong>
+<div style="font-size:1.05rem; color:var(--text-secondary); margin-top:0.3rem;">44 Relational tables • ACID storage</div>
+</div>
+<div style="background:var(--bg-subtle); border:1px solid var(--border-subtle); padding:1rem; border-radius:10px;">
+<strong style="color:var(--text-primary); font-size:1.2rem;">Engine Constraints</strong>
+<div style="font-size:1.05rem; color:var(--text-secondary); margin-top:0.3rem;">Guarantees no double-booking at DB level</div>
+</div>
+</div>
+</div>
+</div>
+</section>
+<!-- ========================================== -->
+<!-- SLIDE 8: DATABASE & DATA INTEGRITY -->
+<!-- ========================================== -->
+<section class="slide" data-notes="Our database schema is structured into 44 relational tables grouped into four main modules: organizational structure, employee profiles and skills, project tracking and assignments, and governance audit logs. Foreign keys enforce data integrity across all relationships.&lt;br&gt;&lt;br&gt;A central technical achievement in our database is a PostgreSQL partial unique index on assignments. It guarantees at the database engine level that a project can have only one active assignment at any time, while preserving all historical records. Even if two managers submit simultaneous approvals, the database prevents any duplicate booking." data-speaker="Benkheira Mohamed Kamal" id="slide-8">
+<div class="slide-header">
+<div class="slide-title-group">
+<h2>Database Design &amp; Relational Rigor</h2>
+<p>44 tables protected by PostgreSQL database-level constraints</p>
+</div>
+<div class="slide-meta-badge">
+<span class="slide-num-badge">08 / 16</span>
+</div>
+</div>
+<div class="slide-body">
+<div class="grid-2">
+<!-- Left: 44 Tables -->
+<div class="card step-item revealed">
+<div class="card-title red" style="font-size:1.6rem;">
+<div class="icon-box red"><svg class="icon-svg" fill="none" stroke="currentColor" viewbox="0 0 24 24"><ellipse cx="12" cy="5" rx="9" ry="3"></ellipse><path d="M3 5V19A9 3 0 0 0 21 19V5"></path><path d="M3 12A9 3 0 0 0 21 12"></path></svg></div>
+<span>44 Relational Tables</span>
+</div>
+<div style="display:flex; flex-direction:column; gap:0.8rem; margin-top:1rem; font-size:1.15rem;">
+<div style="background:var(--bg-subtle); border:1px solid var(--border-subtle); padding:0.9rem 1.2rem; border-radius:10px;">
+<strong style="color:var(--text-primary);">Organization:</strong> <code>departments</code>, <code>teams</code>, <code>positions</code>, <code>locations</code>
+</div>
+<div style="background:var(--bg-subtle); border:1px solid var(--border-subtle); padding:0.9rem 1.2rem; border-radius:10px;">
+<strong style="color:var(--text-primary);">Employees:</strong> <code>employees</code>, <code>employee_skills</code>, <code>certifications</code>
+</div>
+<div style="background:var(--bg-subtle); border:1px solid var(--border-subtle); padding:0.9rem 1.2rem; border-radius:10px;">
+<strong style="color:var(--text-primary);">Projects &amp; Staff:</strong> <code>projects</code>, <code>assignments</code>, <code>assignment_members</code>
+</div>
+<div style="background:var(--bg-subtle); border:1px solid var(--border-subtle); padding:0.9rem 1.2rem; border-radius:10px;">
+<strong style="color:var(--text-primary);">Governance:</strong> <code>profile_change_requests</code>, <code>audit_logs</code>
+</div>
+</div>
+</div>
+<!-- Right: Partial Unique Index -->
+<div class="card step-item">
+<div class="card-title blue" style="font-size:1.6rem;">
+<div class="icon-box blue"><svg class="icon-svg" fill="none" stroke="currentColor" viewbox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10"></path><path d="m9 12 2 2 4-4"></path></svg></div>
+<span>Key Technical Feat: Partial Index</span>
+</div>
+<p style="font-size:1.2rem; color:var(--text-secondary); margin-bottom:1rem; line-height:1.5;">
+              Rule: A project can have <strong>only ONE active assignment</strong> at a time, but retains full history:
+            </p>
+<div class="code-block" style="font-size:1.05rem; margin-bottom:1rem;">
+CREATE UNIQUE INDEX single_active_assignment 
+ON assignments (project_id) 
+WHERE status IN ('approved', 'active');
+            </div>
+<div style="font-size:1.15rem; color:var(--text-secondary); background:var(--bg-subtle); border:1px solid var(--border-subtle); padding:1rem 1.2rem; border-radius:10px; line-height:1.5;">
+<strong style="color:#0284c7;">Why this matters:</strong> Data safety is enforced by the database engine. Even if two managers click approve at the same second, PostgreSQL rejects the second one.
+            </div>
+</div>
+</div>
+</div>
+</section>
+<!-- ========================================== -->
+<!-- SLIDE 9: THE RECOMMENDATION ENGINE -->
+<!-- ========================================== -->
+<section class="slide" data-notes="Our most important algorithmic feature is the Recommendation Engine. When a manager needs staff, the engine scores all eligible candidates out of 100 points: 40 points for required technical skills, 20 points for verified certifications, 15 for languages, 15 for schedule availability, and 10 for free workload capacity.&lt;br&gt;&lt;br&gt;The engine checks proficiency levels from one to five, validates that certificates are current and verified, matches working dates against the project timeline, and prioritizes engineers who have available hours.&lt;br&gt;&lt;br&gt;The engine also enforces strict safety blockers. If a candidate is already at 100% capacity or lacks a mandatory project certification, they are excluded from the candidate pool. The manager can then assign the top-ranked engineer with a single click." data-speaker="Benkheira Mohamed Kamal" id="slide-9">
+<div class="slide-header">
+<div class="slide-title-group">
+<h2>Key Feature: The Recommendation Engine</h2>
+<p>An intelligent matching formula to find the right candidate for every project</p>
+</div>
+<div class="slide-meta-badge">
+<span class="slide-num-badge">09 / 16</span>
+</div>
+</div>
+<div class="slide-body">
+<!-- Formula Box -->
+<div class="formula-box step-item revealed">
+<span>Match Score =</span>
+<span class="formula-tag" style="border-color:#e30613; color:#e30613;">40% Skills</span>
+<span>+</span>
+<span class="formula-tag" style="border-color:#0284c7; color:#0284c7;">20% Certs</span>
+<span>+</span>
+<span class="formula-tag" style="border-color:#059669; color:#059669;">15% Languages</span>
+<span>+</span>
+<span class="formula-tag" style="border-color:#d97706; color:#d97706;">15% Availability</span>
+<span>+</span>
+<span class="formula-tag" style="border-color:#7c3aed; color:#7c3aed;">10% Workload</span>
+</div>
+<div class="grid-2">
+<div class="card step-item">
+<div class="card-title amber" style="font-size:1.6rem;">
+<div class="icon-box amber"><svg class="icon-svg" fill="none" stroke="currentColor" viewbox="0 0 24 24"><circle cx="12" cy="12" r="10"></circle><path d="m9 12 2 2 4-4"></path></svg></div>
+<span>What the Engine Evaluates</span>
+</div>
+<div style="display:flex; flex-direction:column; gap:0.8rem; font-size:1.15rem; margin-top:0.75rem;">
+<div style="background:var(--bg-subtle); border:1px solid var(--border-subtle); padding:0.8rem 1rem; border-radius:8px;">
+<strong style="color:var(--text-primary);">Skills (40%):</strong> Matches proficiency level (1 to 5) to project requirements.
+              </div>
+<div style="background:var(--bg-subtle); border:1px solid var(--border-subtle); padding:0.8rem 1rem; border-radius:8px;">
+<strong style="color:var(--text-primary);">Certifications (20%):</strong> Must be verified and non-expired.
+              </div>
+<div style="background:var(--bg-subtle); border:1px solid var(--border-subtle); padding:0.8rem 1rem; border-radius:8px;">
+<strong style="color:var(--text-primary);">Availability (15%):</strong> Calendar dates match project timeline.
+              </div>
+<div style="background:var(--bg-subtle); border:1px solid var(--border-subtle); padding:0.8rem 1rem; border-radius:8px;">
+<strong style="color:var(--text-primary);">Workload (10%):</strong> Prioritizes staff who have free capacity.
+              </div>
+</div>
+</div>
+<div class="card step-item">
+<div class="card-title green" style="font-size:1.6rem;">
+<div class="icon-box green"><svg class="icon-svg" fill="none" stroke="currentColor" viewbox="0 0 24 24"><path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z"></path></svg></div>
+<span>Smart Safeguards</span>
+</div>
+<div style="display:flex; flex-direction:column; gap:0.8rem; font-size:1.15rem; margin-top:0.75rem;">
+<div style="background:var(--bg-subtle); border:1px solid var(--border-subtle); padding:0.8rem 1rem; border-radius:8px;">
+<strong style="color:#e30613;">Mandatory Blockers:</strong> If a project requires a strict certificate, candidates without it are excluded.
+              </div>
+<div style="background:var(--bg-subtle); border:1px solid var(--border-subtle); padding:0.8rem 1rem; border-radius:8px;">
+<strong style="color:#0284c7;">Overload Protection:</strong> Employees already at 100% capacity are filtered out.
+              </div>
+<div style="background:var(--bg-subtle); border:1px solid var(--border-subtle); padding:0.8rem 1rem; border-radius:8px;">
+<strong style="color:#059669;">1-Click Assignment:</strong> Manager can directly assign the top-ranked candidate.
+              </div>
+</div>
+</div>
+</div>
+</div>
+</section>
+<!-- ========================================== -->
+<!-- SLIDE 10: SECURITY & AUDIT TRAIL -->
+<!-- ========================================== -->
+<section class="slide" data-notes="Enterprise telecom systems require rigorous security. First, we implemented FIDO2 Passkeys, enabling passwordless authentication using biometric sensors such as fingerprint readers, Windows Hello, or physical security keys for strong protection against phishing.&lt;br&gt;&lt;br&gt;Second, we built time-based two-factor authentication. Users can pair authenticator apps like Google or Microsoft Authenticator to generate 6-digit TOTP codes, and receive emergency recovery codes.&lt;br&gt;&lt;br&gt;Third, we developed a complete audit log system. Every critical action—such as approving staff or updating a project—automatically captures the user ID, IP address, timestamp, and a before-and-after JSON snapshot of the changed data.&lt;br&gt;&lt;br&gt;Here in our audit log display, when an administrator approves an assignment, the system records the exact transition from pending to approved under a permanent audit ID for complete transparency. Now, Mohamed Amine will demonstrate the live application screens." data-speaker="Benkheira Mohamed Kamal" id="slide-10">
+<div class="slide-header">
+<div class="slide-title-group">
+<h2>Security &amp; Complete Audit Trail</h2>
+<p>Biometric passkeys, two-factor authentication, and immutable event logs</p>
+</div>
+<div class="slide-meta-badge">
+<span class="slide-num-badge">10 / 16</span>
+</div>
+</div>
+<div class="slide-body">
+<div class="grid-3">
+<!-- Passkeys -->
+<div class="card step-item revealed">
+<div class="icon-box blue" style="margin-bottom:1rem;">
+<svg class="icon-svg" fill="none" stroke="currentColor" viewbox="0 0 24 24"><path d="M12 10a2 2 0 0 0-2 2c0 1.02-.1 2.51-.26 3"></path><path d="M14 13.12c0 2.38 0 6.38-1 8.88"></path><path d="M2 12a10 10 0 0 1 18-6"></path><path d="M21.8 16c.2-2 .131-5.354 0-6"></path><path d="M9 6.8a6 6 0 0 1 9 5.2v2"></path></svg>
+</div>
+<div class="card-title blue" style="font-size:1.55rem;">1. Passkeys (FIDO2)</div>
+<p style="font-size:1.18rem; color:var(--text-secondary); line-height:1.6;">
+              Passwordless login using biometric hardware (TouchID, Windows Hello, or Security Keys).
+            </p>
+<div style="margin-top:auto; font-size:1.05rem; color:#0284c7; font-weight:800;">
+              Phishing-resistant
+            </div>
+</div>
+<!-- 2FA -->
+<div class="card step-item">
+<div class="icon-box green" style="margin-bottom:1rem;">
+<svg class="icon-svg" fill="none" stroke="currentColor" viewbox="0 0 24 24"><rect height="20" rx="2" ry="2" width="14" x="5" y="2"></rect><path d="M12 18h.01"></path></svg>
+</div>
+<div class="card-title green" style="font-size:1.55rem;">2. Two-Factor (2FA)</div>
+<p style="font-size:1.18rem; color:var(--text-secondary); line-height:1.6;">
+              TOTP 6-digit codes via Google or Microsoft Authenticator, plus 8 recovery codes.
+            </p>
+<div style="margin-top:auto; font-size:1.05rem; color:#059669; font-weight:800;">
+              Time-based protection
+            </div>
+</div>
+<!-- Audit Log -->
+<div class="card step-item">
+<div class="icon-box red" style="margin-bottom:1rem;">
+<svg class="icon-svg" fill="none" stroke="currentColor" viewbox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"></path><path d="M14 2v4a2 2 0 0 0 2 2h4"></path></svg>
+</div>
+<div class="card-title red" style="font-size:1.55rem;">3. Audit Log Trail</div>
+<p style="font-size:1.18rem; color:var(--text-secondary); line-height:1.6;">
+              Every status change saves user ID, IP address, timestamp, and a JSON before/after diff.
+            </p>
+<div style="margin-top:auto; font-size:1.05rem; color:#e30613; font-weight:800;">
+              Full accountability
+            </div>
+</div>
+</div>
+<!-- Sample Log Snippet -->
+<div class="card step-item" style="padding:1rem 1.6rem;">
+<div style="display:flex; justify-content:space-between; align-items:center; font-family:var(--font-mono); font-size:1.1rem; color:var(--text-secondary);">
+<span><strong>Logged Event:</strong> <code>assignment_approved</code></span>
+<span><strong>User:</strong> Admin #14</span>
+<span><strong>Old Status:</strong> <code style="color:#d97706;">pending</code> → <strong>New Status:</strong> <code style="color:#059669;">approved</code></span>
+<span><strong>Audit ID:</strong> #2084</span>
+</div>
+</div>
+</div>
+</section>
+<!-- ========================================== -->
+<!-- SLIDE 11: DEMO: EMPLOYEE PORTAL -->
+<!-- ========================================== -->
+<section class="slide" data-notes="Thank you, Mohamed Kamal. Now let us examine the live application screens. Here is the Employee Self-Service Portal built with React 19. The main dashboard gives employees a clear view of their active project assignments, their current workload percentage, and upcoming milestone dates.&lt;br&gt;&lt;br&gt;When an employee earns a new technical certification, they open this Request Modal to enter the details and upload their PDF verification document. The upload is securely staged for HR inspection.&lt;br&gt;&lt;br&gt;The portal ensures employees always have clear visibility over their workload, provides document proof for every registered skill, and delivers instant notifications whenever a request is approved." data-speaker="Brahimi Mohamed Amine" id="slide-11">
+<div class="slide-header">
+<div class="slide-title-group">
+<h2>Application Demo: Employee Portal</h2>
+<p>Real interfaces built with React 19 and Tailwind CSS at /portal/*</p>
+</div>
+<div class="slide-meta-badge">
+<span class="slide-num-badge">11 / 16</span>
+</div>
+</div>
+<div class="slide-body">
+<div class="grid-2">
+<div class="screenshot-container step-item revealed" style="height:330px;">
+<span class="screenshot-badge">Employee Dashboard • Workload &amp; Projects</span>
+<img alt="Portal Dashboard" src="assets/fig-portal-dashboard.png"/>
+<div class="screenshot-caption">Overview of assigned initiatives, workload percentage, and past evaluations</div>
+</div>
+<div class="screenshot-container step-item" style="height:330px;">
+<span class="screenshot-badge" style="color:#d97706;">Request Modal • Certificate Upload</span>
+<img alt="Portal Request Modal" src="assets/fig-profile-req-portal.png"/>
+<div class="screenshot-caption">Employees submit skills and upload PDF verification documents</div>
+</div>
+</div>
+<div class="card step-item" style="padding:1rem 1.6rem;">
+<div style="display:flex; justify-content:space-around; text-align:center; font-size:1.18rem; color:var(--text-primary);">
+<div><strong>Personal Workload:</strong> Real-time percentage • Prevents over-allocation</div>
+<div>•</div>
+<div><strong>Document Proof:</strong> PDF upload for certificate verification</div>
+<div>•</div>
+<div><strong>Notification Bell:</strong> In-app alerts when requests are reviewed</div>
+</div>
+</div>
+</div>
+</section>
+<!-- ========================================== -->
+<!-- SLIDE 12: DEMO: MANAGER BACK-OFFICE -->
+<!-- ========================================== -->
+<section class="slide" data-notes="Next is the Manager Back-Office built with Filament. When a Project Manager needs engineers, this Recommendation Modal displays automatically scored candidates ranked by match percentage, showing their skills and available hours.&lt;br&gt;&lt;br&gt;On the HR administration side, officers inspect submitted employee requests, review the attached certificate documents, and approve or reject the update with a single click.&lt;br&gt;&lt;br&gt;This back-office eliminates manual spreadsheet tracking, provides one-click staff assignments, and guarantees that every skill update is verified before entering the corporate database. Now, Mohamed Kamal will walk through the technical challenges and software quality." data-speaker="Brahimi Mohamed Amine" id="slide-12">
+<div class="slide-header">
+<div class="slide-title-group">
+<h2>Application Demo: Manager Back-Office</h2>
+<p>Candidate matching modal and HR approval workflow in Filament 5</p>
+</div>
+<div class="slide-meta-badge">
+<span class="slide-num-badge">12 / 16</span>
+</div>
+</div>
+<div class="slide-body">
+<div class="grid-2">
+<div class="screenshot-container step-item revealed" style="height:330px;">
+<span class="screenshot-badge" style="color:#d97706;">Matching Modal • Scored Candidates</span>
+<img alt="Recommendation Modal" src="assets/fig-recommendation-modal.png"/>
+<div class="screenshot-caption">Ranked candidates with percentage match and one-click assignment creation</div>
+</div>
+<div class="screenshot-container step-item" style="height:330px;">
+<span class="screenshot-badge" style="color:#059669;">HR Verification • Request Approval</span>
+<img alt="Profile Requests Admin" src="assets/fig-profile-req-admin.png"/>
+<div class="screenshot-caption">HR inspects certificate proof, checks details, and approves the update</div>
+</div>
+</div>
+<div class="card step-item" style="padding:1rem 1.6rem;">
+<div style="display:flex; justify-content:space-around; text-align:center; font-size:1.18rem; color:var(--text-primary);">
+<div><strong>Smart Ranking:</strong> Top matching candidates calculated automatically</div>
+<div>•</div>
+<div><strong>One-Click Assignment:</strong> Promotes top match to formal assignment</div>
+<div>•</div>
+<div><strong>HR Validation:</strong> Verifies proof before updating company database</div>
+</div>
+</div>
+</div>
+</section>
+<!-- ========================================== -->
+<!-- SLIDE 13: CHALLENGES & SOLUTIONS -->
+<!-- ========================================== -->
+<section class="slide" data-notes="Thank you, Mohamed Amine. During development, we solved four concrete engineering challenges. First, we needed to permit only one active assignment per project while retaining full historical records. A standard UNIQUE constraint would delete past history, so we implemented a PostgreSQL partial unique index filtering only approved and active records.&lt;br&gt;&lt;br&gt;Second, building an independent REST API for React would have doubled our validation rules and data models. We used Inertia.js to connect Laravel controllers directly to React components without maintaining duplicate API endpoints.&lt;br&gt;&lt;br&gt;Third, calculating match scores across 300 employee profiles initially caused slow database queries. We solved this by pre-filtering inactive records in SQL and eager-loading skills and certificates in a single efficient query.&lt;br&gt;&lt;br&gt;Fourth, circular database references between departments and managers caused migration deadlocks. We resolved this by creating tables first, and attaching relational foreign keys in a dedicated second migration." data-speaker="Benkheira Mohamed Kamal" id="slide-13">
+<div class="slide-header">
+<div class="slide-title-group">
+<h2>Technical Challenges &amp; How We Solved Them</h2>
+<p>Four concrete engineering obstacles overcome during development</p>
+</div>
+<div class="slide-meta-badge">
+<span class="slide-num-badge">13 / 16</span>
+</div>
+</div>
+<div class="slide-body">
+<div class="grid-2">
+<div class="card step-item revealed">
+<div class="card-title red" style="font-size:1.55rem;">
+<div class="icon-box red"><svg class="icon-svg" fill="none" stroke="currentColor" viewbox="0 0 24 24"><circle cx="12" cy="12" r="10"></circle><line x1="12" x2="12" y1="8" y2="12"></line><line x1="12" x2="12.01" y1="16" y2="16"></line></svg></div>
+<span>1. Single Active Staff vs. History</span>
+</div>
+<div style="font-size:1.15rem; color:var(--text-secondary); margin-top:0.5rem; line-height:1.5;">
+<strong>Problem:</strong> Standard database UNIQUE rules would wipe out past assignment history.
+            </div>
+<div style="margin-top:0.75rem; padding:0.8rem 1rem; background:var(--bg-subtle); border:1px solid var(--border-subtle); border-radius:8px; font-size:1.1rem; color:#059669; line-height:1.4;">
+<strong>Solution:</strong> PostgreSQL Partial Unique Index filtered only on 'approved' and 'active' status.
+            </div>
+</div>
+<div class="card step-item">
+<div class="card-title blue" style="font-size:1.55rem;">
+<div class="icon-box blue"><svg class="icon-svg" fill="none" stroke="currentColor" viewbox="0 0 24 24"><polyline points="16 18 22 12 16 6"></polyline><polyline points="8 6 2 12 8 18"></polyline></svg></div>
+<span>2. React with Laravel without 2 APIs</span>
+</div>
+<div style="font-size:1.15rem; color:var(--text-secondary); margin-top:0.5rem; line-height:1.5;">
+<strong>Problem:</strong> Writing a separate REST API meant duplicating validation rules and routing models.
+            </div>
+<div style="margin-top:0.75rem; padding:0.8rem 1rem; background:var(--bg-subtle); border:1px solid var(--border-subtle); border-radius:8px; font-size:1.1rem; color:#059669; line-height:1.4;">
+<strong>Solution:</strong> Used Inertia.js protocol to pass controller data straight into React components.
+            </div>
+</div>
+<div class="card step-item">
+<div class="card-title amber" style="font-size:1.55rem;">
+<div class="icon-box amber"><svg class="icon-svg" fill="none" stroke="currentColor" viewbox="0 0 24 24"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon></svg></div>
+<span>3. Candidate Scoring Speed</span>
+</div>
+<div style="font-size:1.15rem; color:var(--text-secondary); margin-top:0.5rem; line-height:1.5;">
+<strong>Problem:</strong> Scoring 300+ profiles caused slow database queries on skills and certificates.
+            </div>
+<div style="margin-top:0.75rem; padding:0.8rem 1rem; background:var(--bg-subtle); border:1px solid var(--border-subtle); border-radius:8px; font-size:1.1rem; color:#059669; line-height:1.4;">
+<strong>Solution:</strong> Pre-filtered inactive staff in SQL and used eager-loading to load data in one query.
+            </div>
+</div>
+<div class="card step-item">
+<div class="card-title green" style="font-size:1.55rem;">
+<div class="icon-box green"><svg class="icon-svg" fill="none" stroke="currentColor" viewbox="0 0 24 24"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path></svg></div>
+<span>4. Circular Manager Relationships</span>
+</div>
+<div style="font-size:1.15rem; color:var(--text-secondary); margin-top:0.5rem; line-height:1.5;">
+<strong>Problem:</strong> Departments point to managers, and employees point to departments.
+            </div>
+<div style="margin-top:0.75rem; padding:0.8rem 1rem; background:var(--bg-subtle); border:1px solid var(--border-subtle); border-radius:8px; font-size:1.1rem; color:#059669; line-height:1.4;">
+<strong>Solution:</strong> Created tables first, then attached manager foreign keys in a second migration.
+            </div>
+</div>
+</div>
+</div>
+</section>
+<!-- ========================================== -->
+<!-- SLIDE 14: TESTING & RESULTS -->
+<!-- ========================================== -->
+<section class="slide" data-notes="To ensure system reliability, we implemented comprehensive automated testing. We developed 124 PHPUnit tests with 492 assertions, validating recommendation math, workflow state transitions, and role-based permissions with a 100% pass rate.&lt;br&gt;&lt;br&gt;Our entire test suite runs in under three seconds with zero failures. We also enforce code cleanliness using Laravel Pint for PSR-12 standard compliance and PHPStan at Level 5 to catch errors before deployment." data-speaker="Benkheira Mohamed Kamal" id="slide-14">
+<div class="slide-header">
+<div class="slide-title-group">
+<h2>Testing &amp; Software Quality</h2>
+<p>124 automated PHPUnit tests, 492 assertions, and 7 browser specs</p>
+</div>
+<div class="slide-meta-badge">
+<span class="slide-num-badge">14 / 16</span>
+</div>
+</div>
+<div class="slide-body">
+<div class="grid-2">
+<!-- Big Numbers -->
+<div class="card step-item revealed">
+<div class="card-title green" style="font-size:1.6rem;">
+<div class="icon-box green"><svg class="icon-svg" fill="none" stroke="currentColor" viewbox="0 0 24 24"><circle cx="12" cy="12" r="10"></circle><path d="m9 12 2 2 4-4"></path></svg></div>
+<span>100% Automated Test Pass Rate</span>
+</div>
+<div style="display:grid; grid-template-columns:1fr 1fr; gap:1.2rem; margin-top:1rem;">
+<div class="stat-box">
+<div class="stat-value green">124</div>
+<div class="stat-label">PHPUnit Tests</div>
+</div>
+<div class="stat-box">
+<div class="stat-value green">492</div>
+<div class="stat-label">Assertions Checked</div>
+</div>
+<div class="stat-box">
+<div class="stat-value">100%</div>
+<div class="stat-label">Success Rate</div>
+</div>
+<div class="stat-box">
+<div class="stat-value blue">7</div>
+<div class="stat-label">Playwright E2E Specs</div>
+</div>
+</div>
+<div style="margin-top:1.2rem; font-size:1.15rem; color:var(--text-secondary); background:var(--bg-subtle); border:1px solid var(--border-subtle); padding:1rem 1.2rem; border-radius:10px; line-height:1.5;">
+<strong style="color:var(--text-primary);">What is verified:</strong> State transitions • Recommendation scoring math • RBAC permission gates • Partial unique index
+            </div>
+</div>
+<!-- Screenshot of Tests -->
+<div class="card step-item">
+<div class="card-title blue" style="font-size:1.6rem;">
+<div class="icon-box blue"><svg class="icon-svg" fill="none" stroke="currentColor" viewbox="0 0 24 24"><polyline points="4 17 10 11 4 5"></polyline><line x1="12" x2="20" y1="19" y2="19"></line></svg></div>
+<span>Automated Verification Output</span>
+</div>
+<div class="screenshot-container" style="height:260px; margin-bottom:1rem;">
+<img alt="Test Output" src="assets/fig-test-output.png"/>
+<div class="screenshot-caption">All 124 tests pass in under 3 seconds with zero regressions</div>
+</div>
+<div style="display:flex; justify-content:space-between; font-size:1.1rem; color:var(--text-secondary); background:var(--bg-subtle); border:1px solid var(--border-subtle); padding:0.8rem 1.2rem; border-radius:8px;">
+<span><strong>Code Style:</strong> Laravel Pint (PSR-12)</span>
+<span><strong>Static Analysis:</strong> PHPStan Level 5</span>
+</div>
+</div>
+</div>
+</div>
+</section>
+<!-- ========================================== -->
+<!-- SLIDE 15: LIMITS & FUTURE IMPROVEMENTS -->
+<!-- ========================================== -->
+<section class="slide" data-notes="In engineering, evaluating system limits is just as important as showing features. Today, our matching formula uses fixed percentage weights, notification updates refresh every 30 seconds through polling, and mobile access is provided via responsive web browsing rather than a native mobile application.&lt;br&gt;&lt;br&gt;Looking forward, three key enhancements are planned: training machine learning models on post-project evaluations to dynamically tune matching weights, adding real-time WebSockets via Laravel Reverb for instant push alerts, and developing a dedicated cross-platform mobile app." data-speaker="Benkheira Mohamed Kamal" id="slide-15">
+<div class="slide-header">
+<div class="slide-title-group">
+<h2>Current Limits &amp; Future Improvements</h2>
+<p>What the system does today and realistic next steps</p>
+</div>
+<div class="slide-meta-badge">
+<span class="slide-num-badge">15 / 16</span>
+</div>
+</div>
+<div class="slide-body">
+<div class="grid-2">
+<!-- Current Limits -->
+<div class="card step-item revealed" style="border-top:5px solid var(--accent-amber);">
+<div class="card-title amber" style="font-size:1.6rem;">
+<div class="icon-box amber"><svg class="icon-svg" fill="none" stroke="currentColor" viewbox="0 0 24 24"><circle cx="12" cy="12" r="10"></circle><line x1="12" x2="12" y1="8" y2="12"></line><line x1="12" x2="12.01" y1="16" y2="16"></line></svg></div>
+<span>Current Boundaries</span>
+</div>
+<div style="display:flex; flex-direction:column; gap:1rem; margin-top:1rem; font-size:1.2rem;">
+<div style="background:var(--bg-subtle); border:1px solid var(--border-subtle); padding:1rem 1.2rem; border-radius:10px; line-height:1.5;">
+<strong style="color:var(--text-primary);">Fixed Scoring Weights:</strong> Formula uses fixed percentages (40% skills, 20% certs) rather than machine learning.
+              </div>
+<div style="background:var(--bg-subtle); border:1px solid var(--border-subtle); padding:1rem 1.2rem; border-radius:10px; line-height:1.5;">
+<strong style="color:var(--text-primary);">30-Second Polling:</strong> Notification bell checks for updates every 30s instead of live WebSockets.
+              </div>
+<div style="background:var(--bg-subtle); border:1px solid var(--border-subtle); padding:1rem 1.2rem; border-radius:10px; line-height:1.5;">
+<strong style="color:var(--text-primary);">Responsive Web App:</strong> Mobile-friendly in browser, but not a compiled native phone app.
+              </div>
+</div>
+</div>
+<!-- Future Perspectives -->
+<div class="card step-item" style="border-top:5px solid var(--accent-cyan);">
+<div class="card-title blue" style="font-size:1.6rem;">
+<div class="icon-box blue"><svg class="icon-svg" fill="none" stroke="currentColor" viewbox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg></div>
+<span>Future Improvements</span>
+</div>
+<div style="display:flex; flex-direction:column; gap:1rem; margin-top:1rem; font-size:1.2rem;">
+<div style="background:var(--bg-subtle); border:1px solid var(--border-subtle); padding:1rem 1.2rem; border-radius:10px; line-height:1.5;">
+<strong style="color:#0284c7;">1. Machine Learning Tuning:</strong> Train weights on post-project evaluation scores to improve matches.
+              </div>
+<div style="background:var(--bg-subtle); border:1px solid var(--border-subtle); padding:1rem 1.2rem; border-radius:10px; line-height:1.5;">
+<strong style="color:#059669;">2. Live WebSockets:</strong> Instant push alerts for assignments and approvals using Laravel Reverb.
+              </div>
+<div style="background:var(--bg-subtle); border:1px solid var(--border-subtle); padding:1rem 1.2rem; border-radius:10px; line-height:1.5;">
+<strong style="color:#7c3aed;">3. Native Mobile App:</strong> React Native app for technicians on the move.
+              </div>
+</div>
+</div>
+</div>
+</div>
+</section>
+<!-- ========================================== -->
+<!-- SLIDE 16: CONCLUSION & JURY Q&A -->
+<!-- ========================================== -->
+<section class="slide" data-notes="In conclusion, we designed and implemented a production-ready resource assignment platform tailored to Djezzy's real operational needs. We validated our solution through 124 passing automated tests, clear workflows, and strict database integrity rules.&lt;br&gt;&lt;br&gt;This graduation project provided us with invaluable practical experience in full-stack development, database architecture, and agile teamwork. We thank Madame President and members of the jury for your kind attention, and we are now ready to answer your questions." data-speaker="Amine &amp; Kamal" id="slide-16">
+<div style="flex:1; display:flex; flex-direction:column; justify-content:center; align-items:center; text-align:center; padding:1.5rem 1rem;">
+<!-- Three Organization Logos on Closing Slide -->
+<div class="logos-container" style="margin-bottom:1.8rem;">
+<div class="logo-item" title="Host Organization: Djezzy">
+<img alt="Djezzy Logo" src="assets/djezzy-logo.png" style="height:65px; object-fit:contain;"/>
+</div>
+<div style="height:40px; width:2px; background:var(--border-strong);"></div>
+<div class="logo-item" title="Academic Institution: INSFP Rahmania">
+<img alt="INSFP Rahmania Logo" src="assets/insfp.png" style="height:65px; object-fit:contain;"/>
+</div>
+<div style="height:40px; width:2px; background:var(--border-strong);"></div>
+<div class="logo-item" title="Ministry of Vocational Training">
+<img alt="Ministry Logo" src="assets/ministry.png" style="height:65px; object-fit:contain;"/>
+</div>
+</div>
+<h2 style="font-size:3.5rem; font-weight:900; letter-spacing:-0.03em; margin-bottom:1rem; color:var(--text-primary);">
+          Thank You for Your Attention
+        </h2>
+<p style="font-size:1.45rem; color:var(--text-secondary); max-width:850px; margin-bottom:2.2rem; font-weight:500;">
+          We are ready to answer the honorable jury's questions.
+        </p>
+<div class="grid-3" style="width:100%; max-width:1100px; text-align:left; margin-bottom:2rem;">
+<div class="card" style="padding:1.3rem 1.6rem;">
+<div style="font-size:0.95rem; text-transform:uppercase; color:var(--text-muted); font-weight:800;">Delivered System</div>
+<div style="font-size:1.3rem; font-weight:800; color:var(--text-primary); margin-top:0.4rem;">44 Database Tables</div>
+<div style="font-size:1.1rem; color:var(--text-secondary); margin-top:0.2rem;">6 Roles • 62 Permissions</div>
+</div>
+<div class="card" style="padding:1.3rem 1.6rem;">
+<div style="font-size:0.95rem; text-transform:uppercase; color:var(--text-muted); font-weight:800;">Test Verification</div>
+<div style="font-size:1.3rem; font-weight:800; color:#059669; margin-top:0.4rem;">124 PHPUnit Tests</div>
+<div style="font-size:1.1rem; color:var(--text-secondary); margin-top:0.2rem;">492 Assertions • 100% Green</div>
+</div>
+<div class="card" style="padding:1.3rem 1.6rem;">
+<div style="font-size:0.95rem; text-transform:uppercase; color:var(--text-muted); font-weight:800;">Tech Stack</div>
+<div style="font-size:1.3rem; font-weight:800; color:#0284c7; margin-top:0.4rem;">Laravel 11 • React 19 • Filament 5</div>
+<div style="font-size:1.1rem; color:var(--text-secondary); margin-top:0.2rem;">PostgreSQL 16 Engine</div>
+</div>
+</div>
+<div style="color:var(--text-muted); font-size:1.15rem; font-weight:500;">
+          INSFP Rahmania • Promotion 2025/2026 • Algiers
+        </div>
+</div>
+</section>
+</main>
+<!-- Speaker Notes Collapsible Drawer (Press 'N') -->
+<aside class="notes-drawer" id="notesDrawer">
+<div class="notes-header">
+<div class="notes-title">
+<svg class="icon-svg" fill="none" stroke="currentColor" style="width:22px; height:22px;" viewbox="0 0 24 24"><path d="M12 20h9"></path><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"></path></svg>
+<span>Speaker Notes — </span><span id="notesSpeaker">Benkheira Mohamed Kamal</span>
+</div>
+<button class="btn-ctrl" onclick="document.getElementById('notesDrawer').classList.remove('open')" style="padding:0.35rem 0.8rem; font-size:0.9rem;">Close ×</button>
+</div>
+<div class="notes-content" id="notesContent">
+      Loading speaker notes...
+    </div>
+</aside>
+<!-- Bottom Navigation & Controls Bar -->
+<footer class="bottom-bar">
+<div class="controls-left">
+<button class="btn-ctrl" id="prevBtn" title="Previous Slide or Step (Left Arrow)">
+<span>←</span> Prev
+      </button>
+<button class="btn-ctrl red" id="nextBtn" title="Next Slide or Step (Right Arrow / Space)">
+        Next <span>→</span>
+</button>
+<div class="slide-counter">
+<span id="currentSlideNum">1</span> / <span id="totalSlidesNum">16</span>
+</div>
+</div>
+<div class="controls-center">
+<span style="font-size:0.95rem; color:var(--text-secondary); font-weight:700;">
+        Djezzy Resource Assignment Platform • BTS Graduation Defense
+      </span>
+</div>
+<div class="controls-right">
+<button class="btn-ctrl" id="notesBtn" title="Toggle Speaker Notes Drawer (N)">
+<svg class="icon-svg" fill="none" stroke="currentColor" style="width:20px; height:20px;" viewbox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"></path></svg>
+        Notes <kbd style="font-size:0.8rem; opacity:0.7;">(N)</kbd>
+</button>
+<button class="btn-ctrl" id="presenterBtn" title="Open Detached Presenter Window with Timer &amp; Dual Sync (P)">
+<svg class="icon-svg" fill="none" stroke="currentColor" style="width:20px; height:20px;" viewbox="0 0 24 24"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+        Presenter View <kbd style="font-size:0.8rem; opacity:0.7;">(P)</kbd>
+</button>
+<button class="btn-ctrl" id="fullscreenBtn" title="Toggle Fullscreen (F)">
+<svg class="icon-svg" fill="none" stroke="currentColor" style="width:20px; height:20px;" viewbox="0 0 24 24"><path d="M8 3H5a2 2 0 0 0-2 2v3"></path><path d="M21 8V5a2 2 0 0 0-2-2h-3"></path><path d="M3 16v3a2 2 0 0 0 2 2h3"></path><path d="M16 21h3a2 2 0 0 0 2-2v-3"></path></svg>
+        Fullscreen <kbd style="font-size:0.8rem; opacity:0.7;">(F)</kbd>
+</button>
+</div>
+</footer>
+<!-- Fullscreen Image Zoom Lightbox Modal -->
+<div class="lightbox-modal" id="lightboxModal" title="Click anywhere or press Esc to return">
+<div class="lightbox-hint">
+<span>Click anywhere or press Esc to close</span> ×
+    </div>
+<div class="lightbox-img-wrapper">
+<img alt="Fullscreen Preview" class="lightbox-img" id="lightboxImg" src=""/>
+<div class="lightbox-caption" id="lightboxCaption"></div>
+</div>
+</div>
+<script src="app.js"></script>
+</body>
+</html>

@@ -50,10 +50,10 @@ class Assignment extends Model
         return [
             'assignment_type' => AssignmentType::class,
             'status' => AssignmentStatus::class,
-            'assigned_at' => 'datetime',
-            'approved_at' => 'datetime',
-            'start_date' => 'date',
-            'end_date' => 'date',
+            'assigned_at' => 'datetime:Y-m-d H:i',
+            'approved_at' => 'datetime:Y-m-d H:i',
+            'start_date' => 'date:Y-m-d',
+            'end_date' => 'date:Y-m-d',
         ];
     }
 

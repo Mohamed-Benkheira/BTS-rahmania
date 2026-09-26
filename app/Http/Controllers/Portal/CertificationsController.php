@@ -35,14 +35,27 @@ class CertificationsController extends Controller
 
     public function store(Request $request): RedirectResponse
     {
-        $payload = $request->validate([
+        $validated = $request->validate([
+            'certification_id' => ['required', 'integer', 'exists:certifications,id'],
             'certificate_number' => ['nullable', 'string', 'max:255'],
-            'issued_at' => ['nullable', 'date'],
+            'issued_at' => ['nullable', 'date', 'before_or_equal:today'],
             'expires_at' => ['nullable', 'date', 'after_or_equal:issued_at'],
             'document' => ['nullable', 'file', 'mimes:pdf,png,jpg,jpeg', 'max:4096'],
+            'note' => ['nullable', 'string', 'max:1000'],
+        ], [
+            'certification_id.required' => 'Please select a certification.',
+            'certification_id.exists' => 'The selected certification is invalid.',
+            'issued_at.before_or_equal' => 'Issued date cannot be in the future.',
+            'expires_at.after_or_equal' => 'Expires date must be on or after the issued date.',
+            'document.max' => 'The document may not be greater than 4MB.',
+            'document.mimes' => 'The document must be a file of type: pdf, png, jpg, jpeg.',
         ]);
 
-        unset($payload['document']);
+        $payload = [
+            'certificate_number' => $validated['certificate_number'] ?? null,
+            'issued_at' => $validated['issued_at'] ?? null,
+            'expires_at' => $validated['expires_at'] ?? null,
+        ];
 
         if ($request->hasFile('document')) {
             $payload['document_path'] = $request->file('document')->store('certification-documents', 'public');
@@ -51,9 +64,9 @@ class CertificationsController extends Controller
         app(ProfileChangeRequestService::class)->submit(
             employee: $request->user()->employee,
             type: ProfileChangeType::Certification,
-            subjectId: (int) $request->input('certification_id'),
+            subjectId: (int) $validated['certification_id'],
             payload: $payload,
-            note: $request->input('note'),
+            note: $validated['note'] ?? null,
             actor: $request->user(),
         );
 

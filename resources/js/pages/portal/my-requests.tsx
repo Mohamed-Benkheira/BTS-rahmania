@@ -6,6 +6,7 @@ import {
     CardHeader,
     CardTitle,
 } from '@/components/ui/card';
+import { formatDate, formatDateTime } from '@/lib/utils';
 
 type ChangeRequest = {
     id: number;
@@ -52,7 +53,16 @@ function displayValue(value: unknown): string {
         return JSON.stringify(value);
     }
 
-    return String(value);
+    const str = String(value);
+
+    if (/^\d{4}-\d{2}-\d{2}T/.test(str)) {
+        if (/T00:00:00(\.000000)?Z?$/.test(str)) {
+            return formatDate(str);
+        }
+        return formatDateTime(str);
+    }
+
+    return str;
 }
 
 export default function PortalRequests() {
@@ -87,7 +97,7 @@ export default function PortalRequests() {
                                         {humanize(request.type)} change
                                     </CardTitle>
                                     <p className="text-sm text-muted-foreground">
-                                        Submitted {request.created_at?.replace('T', ' ').slice(0, 16)}
+                                        Submitted {formatDateTime(request.created_at)}
                                     </p>
                                 </div>
                                 <Badge
@@ -136,7 +146,7 @@ export default function PortalRequests() {
                                 {request.reviewed_at && (
                                     <div className="border-t pt-3 text-muted-foreground">
                                         Reviewed by {request.reviewer?.name ?? '—'}{' '}
-                                        on {request.reviewed_at?.replace('T', ' ').slice(0, 16)}
+                                        on {formatDateTime(request.reviewed_at)}
                                         {request.reviewer_note ? ` — ${request.reviewer_note}` : ''}
                                     </div>
                                 )}

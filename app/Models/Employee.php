@@ -37,6 +37,7 @@ use Illuminate\Support\Carbon;
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
  * @property Carbon|null $deleted_at
+ * @property-read string $full_name
  */
 #[Fillable([
     'user_id',
@@ -62,11 +63,18 @@ class Employee extends Model
     /** @use HasFactory<EmployeeFactory> */
     use HasFactory, SoftDeletes;
 
+    /**
+     * @var list<string>
+     */
+    protected $appends = [
+        'full_name',
+    ];
+
     protected function casts(): array
     {
         return [
-            'birth_date' => 'date',
-            'hire_date' => 'date',
+            'birth_date' => 'date:Y-m-d',
+            'hire_date' => 'date:Y-m-d',
             'employment_type' => EmploymentType::class,
             'employment_status' => EmploymentStatus::class,
         ];

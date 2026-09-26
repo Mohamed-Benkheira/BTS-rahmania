@@ -1,4 +1,5 @@
 import { Link, Head, useForm, usePage } from '@inertiajs/react';
+import InputError from '@/components/input-error';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
@@ -10,6 +11,7 @@ import {
 } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { formatDate, formatDateTime } from '@/lib/utils';
 import { store } from '@/routes/portal/profile';
 import type { Employee } from '@/types';
 
@@ -21,7 +23,7 @@ type PageProps = {
 export default function PortalProfile() {
     const { employee, pendingRequests } = usePage<PageProps>().props;
 
-    const { data, setData, errors, processing, submit } = useForm({
+    const { data, setData, errors, processing, submit, reset } = useForm({
         phone: '',
         biography: '',
         birth_date: '',
@@ -32,6 +34,7 @@ export default function PortalProfile() {
         submit('post', store().url, {
             method: 'post',
             preserveScroll: true,
+            onSuccess: () => reset(),
         });
     };
 
@@ -57,7 +60,11 @@ export default function PortalProfile() {
                             <dl className="grid grid-cols-2 gap-x-4 gap-y-3 text-sm">
                                 <div>
                                     <dt className="text-muted-foreground">Full name</dt>
-                                    <dd className="font-medium">{employee.full_name}</dd>
+                                    <dd className="font-medium">
+                                        {employee.full_name ||
+                                            `${employee.first_name ?? ''} ${employee.last_name ?? ''}`.trim() ||
+                                            '—'}
+                                    </dd>
                                 </div>
                                 <div>
                                     <dt className="text-muted-foreground">Employee code</dt>
@@ -69,11 +76,13 @@ export default function PortalProfile() {
                                 </div>
                                 <div>
                                     <dt className="text-muted-foreground">Birth date</dt>
-                                    <dd className="font-medium">{employee.birth_date ?? '—'}</dd>
+                                    <dd className="font-medium">{formatDate(employee.birth_date)}</dd>
                                 </div>
                                 <div>
                                     <dt className="text-muted-foreground">Position</dt>
-                                    <dd className="font-medium">{employee.position?.name ?? '—'}</dd>
+                                    <dd className="font-medium">
+                                        {employee.position?.title ?? employee.position?.name ?? '—'}
+                                    </dd>
                                 </div>
                                 <div>
                                     <dt className="text-muted-foreground">Department</dt>
@@ -85,7 +94,13 @@ export default function PortalProfile() {
                                 </div>
                                 <div>
                                     <dt className="text-muted-foreground">Manager</dt>
-                                    <dd className="font-medium">{employee.manager?.full_name ?? '—'}</dd>
+                                    <dd className="font-medium">
+                                        {employee.manager?.full_name ||
+                                            (employee.manager
+                                                ? `${employee.manager.first_name ?? ''} ${employee.manager.last_name ?? ''}`.trim()
+                                                : '') ||
+                                            '—'}
+                                    </dd>
                                 </div>
                                 <div className="col-span-2">
                                     <dt className="text-muted-foreground">Biography</dt>
@@ -100,57 +115,68 @@ export default function PortalProfile() {
                             <CardHeader>
                                 <CardTitle className="text-base">Request a change</CardTitle>
                             </CardHeader>
-                            <CardContent className="space-y-4">
-                                <div className="grid gap-2">
-                                    <Label htmlFor="phone">Phone</Label>
-                                    <Input
-                                        id="phone"
-                                        value={data.phone}
-                                        onChange={(e) => setData('phone', e.target.value)}
-                                        placeholder="+213 770 00 00 00"
-                                    />
-                                </div>
+                            <CardContent>
+                                <form
+                                    onSubmit={(e) => {
+                                        e.preventDefault();
+                                        submitRequest();
+                                    }}
+                                    className="space-y-4"
+                                >
+                                    <div className="grid gap-2">
+                                        <Label htmlFor="phone">Phone</Label>
+                                        <Input
+                                            id="phone"
+                                            value={data.phone}
+                                            onChange={(e) => setData('phone', e.target.value)}
+                                            placeholder="+213 770 00 00 00"
+                                            maxLength={30}
+                                        />
+                                        <InputError message={errors.phone} />
+                                    </div>
 
-                                <div className="grid gap-2">
-                                    <Label htmlFor="birth_date">Birth date</Label>
-                                    <Input
-                                        id="birth_date"
-                                        type="date"
-                                        value={data.birth_date}
-                                        onChange={(e) => setData('birth_date', e.target.value)}
-                                    />
-                                </div>
+                                    <div className="grid gap-2">
+                                        <Label htmlFor="birth_date">Birth date</Label>
+                                        <Input
+                                            id="birth_date"
+                                            type="date"
+                                            max={new Date().toISOString().split('T')[0]}
+                                            value={data.birth_date}
+                                            onChange={(e) => setData('birth_date', e.target.value)}
+                                        />
+                                        <InputError message={errors.birth_date} />
+                                    </div>
 
-                                <div className="grid gap-2">
-                                    <Label htmlFor="biography">Biography</Label>
-                                    <textarea
-                                        id="biography"
-                                        className="min-h-24 w-full rounded-md border bg-transparent px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-ring"
-                                        value={data.biography}
-                                        onChange={(e) => setData('biography', e.target.value)}
-                                        placeholder="A short professional summary…"
-                                    />
-                                </div>
+                                    <div className="grid gap-2">
+                                        <Label htmlFor="biography">Biography</Label>
+                                        <textarea
+                                            id="biography"
+                                            className="min-h-24 w-full rounded-md border bg-transparent px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-ring"
+                                            value={data.biography}
+                                            onChange={(e) => setData('biography', e.target.value)}
+                                            placeholder="A short professional summary…"
+                                            maxLength={2000}
+                                        />
+                                        <InputError message={errors.biography} />
+                                    </div>
 
-                                <div className="grid gap-2">
-                                    <Label htmlFor="note">Note for HR (optional)</Label>
-                                    <textarea
-                                        id="note"
-                                        className="min-h-16 w-full rounded-md border bg-transparent px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-ring"
-                                        value={data.note}
-                                        onChange={(e) => setData('note', e.target.value)}
-                                    />
-                                </div>
+                                    <div className="grid gap-2">
+                                        <Label htmlFor="note">Note for HR (optional)</Label>
+                                        <textarea
+                                            id="note"
+                                            className="min-h-16 w-full rounded-md border bg-transparent px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-ring"
+                                            value={data.note}
+                                            onChange={(e) => setData('note', e.target.value)}
+                                            placeholder="Any context regarding these changes…"
+                                            maxLength={1000}
+                                        />
+                                        <InputError message={errors.note} />
+                                    </div>
 
-                                {(errors.phone || errors.birth_date || errors.biography || errors.note) && (
-                                    <p className="text-sm text-red-600">
-                                        {errors.phone ?? errors.birth_date ?? errors.biography ?? errors.note}
-                                    </p>
-                                )}
-
-                                <Button onClick={submitRequest} disabled={processing}>
-                                    {processing ? 'Submitting…' : 'Submit for approval'}
-                                </Button>
+                                    <Button type="submit" disabled={processing}>
+                                        {processing ? 'Submitting…' : 'Submit for approval'}
+                                    </Button>
+                                </form>
                             </CardContent>
                         </Card>
 
@@ -166,7 +192,7 @@ export default function PortalProfile() {
                                             className="flex items-center justify-between text-sm"
                                         >
                                             <span className="text-muted-foreground">
-                                                Submitted {request.created_at?.replace('T', ' ').slice(0, 16)}
+                                                Submitted {formatDateTime(request.created_at)}
                                             </span>
                                             <Badge variant="secondary">Pending</Badge>
                                         </div>
