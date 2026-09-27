@@ -232,10 +232,10 @@ Tier 1 illuminates: **1. User Browser** (Filament 5 Manager Back-Office + React 
 > Thank you, Mohamed Amine. Now, let us examine how the system is engineered. We selected a proven 3-tier architecture. On the client tier, users interact with the system through standard web browsers: managers access the Filament back-office, while employees use our React 19 single-page application.
 
 #### Fragment 2 &bull; Visual on Slide
-Tier 2 illuminates: **2. Application Server** (Laravel 11 &bull; PHP 8.3 + Inertia.js Bridge).
+Tier 2 illuminates: **2. Application Server** (Laravel 13 &bull; PHP 8.3 + Inertia.js Bridge).
 
 #### Fragment 2 &bull; Spoken Words
-> On the application tier, our backend runs on Laravel 11 and PHP 8.3. It coordinates all business logic, permission rules, and workflow state transitions. We use Inertia.js to seamlessly transmit data between Laravel and React without maintaining duplicate API endpoints.
+> On the application tier, our backend runs on Laravel 13 and PHP 8.3. It coordinates all business logic, permission rules, and workflow state transitions. We use Inertia.js to seamlessly transmit data between Laravel and React without maintaining duplicate API endpoints.
 
 #### Fragment 3 &bull; Visual on Slide
 Tier 3 illuminates: **3. Database** (PostgreSQL 16 &bull; 44 Relational Tables + Engine Constraints).
